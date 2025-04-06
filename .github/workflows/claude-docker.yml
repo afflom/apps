@@ -25,8 +25,10 @@ permissions:
 env:
   NODE_VERSION: "18.x"
   MIN_ISSUE_LENGTH: 100
-  MAX_RETRIES: 3
-  BASE_RETRY_DELAY: 10  # seconds
+  MAX_API_RETRIES: 3       # Max retries for Claude API calls
+  BASE_RETRY_DELAY: 10     # Base delay seconds between retries
+  MAX_HOOK_RETRIES: 10     # Max retries for pre-commit hook failures
+  HOOK_RETRY_DELAY: 60     # Seconds to wait before retrying after hook failure
   DOCKER_IMAGE_TAG: "claude-runner:latest"  # Specify exact Docker image tag
 
 jobs:
@@ -146,8 +148,10 @@ jobs:
       - name: Run Claude in Docker container
         run: |
           # Export environment variables for use in script
-          echo "MAX_RETRIES=${{ env.MAX_RETRIES }}" > .env-claude
+          echo "MAX_API_RETRIES=${{ env.MAX_API_RETRIES }}" > .env-claude
           echo "BASE_RETRY_DELAY=${{ env.BASE_RETRY_DELAY }}" >> .env-claude
+          echo "MAX_HOOK_RETRIES=${{ env.MAX_HOOK_RETRIES }}" >> .env-claude
+          echo "HOOK_RETRY_DELAY=${{ env.HOOK_RETRY_DELAY }}" >> .env-claude
           
           cat > claude-prompt.txt << EOL
           You are tasked with implementing a solution for GitHub issue #${{ github.event.issue.number }}.
@@ -181,10 +185,10 @@ jobs:
           source .env-claude
           
           # Implement retry logic for Claude API
-          RETRY_COUNT=0
-          SUCCESS=false
+          API_RETRY_COUNT=0
+          API_SUCCESS=false
           
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = false ]; do
+          while [ $API_RETRY_COUNT -lt $MAX_API_RETRIES ] && [ "$API_SUCCESS" = false ]; do
             # Capture both stdout and stderr, but also show in workflow logs
             echo "Running Claude with prompt:"
             cat claude-prompt.txt
@@ -207,25 +211,25 @@ jobs:
             
             # Check if Claude ran successfully
             if [ $CLAUDE_EXIT_CODE -eq 0 ]; then
-              SUCCESS=true
+              API_SUCCESS=true
               echo "-----------------------------------"
               echo "Claude completed implementation successfully"
             else
-              RETRY_COUNT=$((RETRY_COUNT+1))
+              API_RETRY_COUNT=$((API_RETRY_COUNT+1))
               ERROR_CODE=$?
-              echo "Claude execution failed with exit code $ERROR_CODE (Attempt $RETRY_COUNT of $MAX_RETRIES)"
+              echo "Claude execution failed with exit code $ERROR_CODE (API Attempt $API_RETRY_COUNT of $MAX_API_RETRIES)"
               echo "-----------------------------------"
               echo "Error output:"
               cat claude-error.log
               
-              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              if [ $API_RETRY_COUNT -lt $MAX_API_RETRIES ]; then
                 # Wait before retrying (exponential backoff)
-                SLEEP_TIME=$((BASE_RETRY_DELAY * RETRY_COUNT))
+                SLEEP_TIME=$((BASE_RETRY_DELAY * API_RETRY_COUNT))
                 echo "Waiting $SLEEP_TIME seconds before retrying..."
                 sleep $SLEEP_TIME
               else
                 # Log the error
-                echo "Claude failed after $MAX_RETRIES attempts"
+                echo "Claude failed after $MAX_API_RETRIES API attempts"
                 echo "Last error log:"
                 cat claude-error.log
                 exit 1
@@ -272,28 +276,139 @@ jobs:
       
       - name: Commit and push changes
         run: |
-          # Check if there are any changes
-          if [[ -n $(git status --porcelain) ]]; then
-            # Stage all changes
-            git add .
-            
-            # Create commit message
-            git commit -m "Fix issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
-            
-            Implemented by Claude AI
-            
-            🤖 Generated with [Claude Code](https://claude.ai/code)
-            
-            Co-Authored-By: Claude <noreply@anthropic.com>"
-            
-            # Push to the new branch
-            git push -u origin $BRANCH_NAME
-            
-            echo "Changes committed and pushed to branch $BRANCH_NAME"
-          else
-            echo "::warning::No changes were made by Claude"
-            exit 1
-          fi
+          # Initialize hook retry counter
+          HOOK_RETRY_COUNT=0
+          HOOK_SUCCESS=false
+          
+          # Save the original prompt for retries
+          CURRENT_PROMPT=$(<claude-prompt.txt)
+          
+          while [ $HOOK_RETRY_COUNT -lt ${{ env.MAX_HOOK_RETRIES }} ] && [ "$HOOK_SUCCESS" = false ]; do
+            # Check if there are any changes to commit
+            if [[ -n $(git status --porcelain) ]]; then
+              # Stage all changes
+              git add .
+              
+              # Try to commit with pre-commit hooks
+              echo "Attempting to commit changes (Hook attempt $HOOK_RETRY_COUNT of ${{ env.MAX_HOOK_RETRIES }})..."
+              
+              # Capture the commit output including any hook errors
+              if git commit -m "Fix issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+              
+              Implemented by Claude AI
+              
+              🤖 Generated with [Claude Code](https://claude.ai/code)
+              
+              Co-Authored-By: Claude <noreply@anthropic.com>" > commit-output.txt 2>&1; then
+                # Commit succeeded - hooks passed
+                HOOK_SUCCESS=true
+                echo "Pre-commit hooks passed successfully!"
+                
+                # Push to the new branch
+                git push -u origin $BRANCH_NAME
+                echo "Changes committed and pushed to branch $BRANCH_NAME"
+              else
+                # Commit failed - hook errors
+                HOOK_RETRY_COUNT=$((HOOK_RETRY_COUNT+1))
+                echo "::warning::Pre-commit hook failed (Attempt $HOOK_RETRY_COUNT of ${{ env.MAX_HOOK_RETRIES }})"
+                
+                # Display hook output
+                echo "Hook output:"
+                cat commit-output.txt
+                
+                # Extract hook feedback for Claude
+                HOOK_FEEDBACK=$(cat commit-output.txt)
+                
+                if [ $HOOK_RETRY_COUNT -lt ${{ env.MAX_HOOK_RETRIES }} ]; then
+                  echo "Preparing to retry with hook feedback..."
+                  
+                  # Create new prompt with hook feedback for Claude
+                  cat > claude-retry-prompt.txt << EOL
+                  You previously tried to implement a solution for GitHub issue #${{ github.event.issue.number }}, but the pre-commit hook detected issues with your implementation.
+                  
+                  Original prompt:
+                  $CURRENT_PROMPT
+                  
+                  Pre-commit hook feedback:
+                  $HOOK_FEEDBACK
+                  
+                  Please fix these issues and implement a complete solution that will pass the pre-commit checks.
+                  Focus on:
+                  1. Removing placeholder and stub implementations
+                  2. Implementing a proper solution as specified in the issue
+                  3. Following best practices for TypeScript
+                  4. Ensuring code quality and proper testing
+                  
+                  Your implementation will be rejected again if it doesn't address all the issues reported by the pre-commit hook.
+                  EOL
+                  
+                  # Create a Docker script to re-run Claude with feedback
+                  cat > retry-claude.sh << 'EOF'
+                  #!/bin/bash
+                  set -e
+                  
+                  # Load environment variables
+                  source .env-claude
+                  
+                  # Run Claude with retry prompt
+                  echo "-----------------------------------"
+                  echo "Running Claude with updated prompt including hook feedback:"
+                  cat claude-retry-prompt.txt
+                  echo "-----------------------------------"
+                  
+                  # Run Claude and save output
+                  claude -p "$(cat claude-retry-prompt.txt)" > claude-response.md 2> claude-error.log
+                  
+                  # Display the output
+                  echo "-----------------------------------"
+                  echo "Claude retry output:"
+                  cat claude-response.md
+                  
+                  if [ -s claude-error.log ]; then
+                    echo "-----------------------------------"
+                    echo "Claude retry error output:"
+                    cat claude-error.log
+                  fi
+                  EOF
+                  
+                  chmod +x retry-claude.sh
+                  
+                  # Run Claude in Docker with retry prompt
+                  docker run --rm \
+                    -v $(pwd):/app \
+                    -w /app \
+                    -e ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
+                    ${{ env.DOCKER_IMAGE_TAG }} \
+                    ./retry-claude.sh
+                  
+                  # Update current prompt for next iteration
+                  CURRENT_PROMPT=$(<claude-retry-prompt.txt)
+                  
+                  # Wait before trying the next commit
+                  echo "Waiting ${{ env.HOOK_RETRY_DELAY }} seconds before trying to commit again..."
+                  sleep ${{ env.HOOK_RETRY_DELAY }}
+                  
+                  # Reset any staged changes to try the new implementation
+                  git reset --hard HEAD
+                else
+                  # Max hook retries reached
+                  echo "::error::Claude failed to produce code that passes pre-commit hooks after ${{ env.MAX_HOOK_RETRIES }} attempts"
+                  
+                  # Create a comment on the issue about the failure
+                  gh issue comment ${{ github.event.issue.number }} --body "❌ Claude failed to implement this issue after multiple attempts. The pre-commit hooks kept rejecting the implementation. A maintainer will need to investigate."
+                  
+                  # Remove trigger labels
+                  gh issue edit ${{ github.event.issue.number }} --remove-label claude
+                  gh issue edit ${{ github.event.issue.number }} --remove-label use-docker
+                  
+                  exit 1
+                fi
+              fi
+            else
+              echo "::warning::No changes were made by Claude"
+              exit 1
+            fi
+          done
       
       - name: Create Pull Request
         id: create-pr
