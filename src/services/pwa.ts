@@ -28,7 +28,7 @@ export class PWAService {
       this.wb
         .register()
         .then(() => resolve())
-        .catch((error) => reject(error));
+        .catch((error) => reject(error instanceof Error ? error : new Error(String(error))));
     });
   }
 

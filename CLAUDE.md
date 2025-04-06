@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
+
 - Build: `npm run build`
 - Dev server: `npm run dev`
 - Preview: `npm run preview`
@@ -10,11 +11,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Format: `npm run format` or check with `npm run format:check`
 - Typecheck: `npm run typecheck`
 - Test: `npm run test`
-- Single test: `npm run test -- -t "test name pattern"`
+- Single test: `npm run test src/path/to/file.test.ts`
+- Single test case: `npm run test -- -t "test name pattern"`
 - Test with coverage: `npm run test:coverage`
 - Validate all: `npm run validate`
 
 ## Code Style
+
 - **Imports**: Group by type (external, internal, utils), alphabetize
 - **Types**: Explicit return types on public functions, avoid `any`
 - **Formatting**: Prettier enforced, 2 space indent, 100 chars width, semi, singleQuote

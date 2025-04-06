@@ -9,7 +9,11 @@ export default defineConfig({
       enabled: false // Run in node environment for simplicity during setup
     },
     deps: {
-      inline: ['@uor-foundation/math-js'] // Inline dependencies for easier mocking
+      optimizer: {
+        web: {
+          include: ['@uor-foundation/math-js'] // Include dependencies for easier mocking
+        }
+      }
     },
     testTimeout: 10000,
     hookTimeout: 10000
