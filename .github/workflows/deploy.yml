@@ -119,9 +119,9 @@ jobs:
           path: '_site'
   
   deploy-dev:
-    # Run for all pushes to non-main branches or when manually triggered for dev
+    # Run for all pushes (whether to main or other branches) or when manually triggered for dev
     if: >
-      (github.event_name == 'push' && github.ref != 'refs/heads/main') ||
+      github.event_name == 'push' || 
       (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
     environment:
       name: dev
