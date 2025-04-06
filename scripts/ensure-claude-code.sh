@@ -43,6 +43,12 @@ echo "  Extension ID: anthropic.claude-code-vscode"
 echo ""
 echo "For more information, see: .github/CLAUDE_CODE_GUIDE.md"
 
+# Check if running in non-interactive mode
+if [ "$1" == "--no-interactive" ]; then
+  echo "Running in non-interactive mode. Setup complete."
+  exit 0
+fi
+
 # Offer to start Claude Code
 echo ""
 echo "Would you like to start Claude Code now? (y/n)"

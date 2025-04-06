@@ -1,1 +1,112 @@
-npm test
+#!/bin/sh
+
+echo "Running essential checks before commit..."
+npm run lint && npm run typecheck
+
+if [ $? -ne 0 ]; then
+  echo "❌ Linting or type checking failed. Please fix the issues before committing."
+  exit 1
+fi
+
+echo "Checking for stub implementations and weak tests with Claude..."
+echo "This is required for all commits."
+
+# Ensure Claude CLI is installed
+if ! command -v claude &> /dev/null; then
+  echo "❌ Claude CLI not found. Claude review is mandatory."
+  echo "Please install Claude CLI before committing:"
+  echo "npm install -g @anthropic-ai/claude-code"
+  exit 1
+fi
+
+# Get the list of staged files
+STAGED_FILES=$(git diff --name-only --cached --diff-filter=ACMR | grep -E '\.(ts|tsx|js|jsx)$')
+
+if [ -z "$STAGED_FILES" ]; then
+  echo "No JavaScript/TypeScript files staged for commit. Still running Claude review."
+fi
+
+# Create a temporary file for Claude's response
+TEMP_FILE=$(mktemp)
+
+# Prepare a context-aware prompt for Claude
+echo "You are conducting a pre-commit code review. Your job is to identify stub implementations, incomplete code, placeholder code, mocked functionality, or weakened tests in the staged files.
+Look for:
+1. TODO comments or FIXME markers
+2. Console.log statements that should be removed
+3. Commented out code that should be implemented
+4. Stub/mock implementations that return hardcoded values
+5. Incomplete error handling
+6. Test assertions that are too permissive (e.g. using .toBeDefined() where more specific checks are needed)
+7. Tests with .skip or .only modifiers
+8. Insufficient test coverage of edge cases
+
+Review the following staged files and respond ONLY with a structured error report. If you find any issues, format each one as:
+{
+  \"file\": \"path/to/file.ts\",
+  \"line\": 42,
+  \"severity\": \"error|warning\", 
+  \"type\": \"stubbed|incomplete|mocked|placeholder|weaktest\",
+  \"description\": \"Brief description of the issue\",
+  \"recommendation\": \"How to fix it\"
+}
+
+If no issues are found, output: {\"status\": \"pass\"}
+Do not include any introduction, explanation, summary, or conclusion.
+" > $TEMP_FILE
+
+# Add the content of staged files to the prompt
+echo "\nStaged files for review:\n" >> $TEMP_FILE
+
+for FILE in $STAGED_FILES; do
+  if [ -f "$FILE" ]; then
+    echo "\n### File: $FILE\n" >> $TEMP_FILE
+    git show ":$FILE" >> $TEMP_FILE
+  fi
+done
+
+# Remove redundant check since we already verified Claude is installed
+
+# Add more context from project to improve Claude's understanding
+echo "\n### Project Context:\n" >> $TEMP_FILE
+echo "This is a TypeScript PWA template project with GitHub Pages deployment." >> $TEMP_FILE
+echo "Focus on identifying any unimplemented or stubbed functionality that would make the template incomplete." >> $TEMP_FILE
+
+# Run Claude in non-interactive mode
+CLAUDE_RESPONSE=$(claude $TEMP_FILE --no-interactive 2>/dev/null)
+
+# Check if Claude execution failed
+if [ $? -ne 0 ]; then
+  echo "❌ Claude execution failed. Cannot proceed with commit."
+  echo "Please check your Anthropic API key or Claude CLI installation."
+  echo "Fix the Claude setup before committing."
+  rm $TEMP_FILE
+  exit 1
+fi
+
+# Check if Claude found any issues
+if echo "$CLAUDE_RESPONSE" | grep -q '"status": "pass"'; then
+  echo "✅ Claude review passed. No issues found."
+else
+  echo "❌ Claude found potential issues in your code:"
+  echo "$CLAUDE_RESPONSE" | jq -r '
+    if type == "array" then
+      .[] | "- \(.file):\(.line) [\(.severity)] \(.type): \(.description)\n  → \(.recommendation)"
+    elif .status == "pass" then
+      "✅ No issues found."
+    else
+      "- \(.file):\(.line) [\(.severity)] \(.type): \(.description)\n  → \(.recommendation)"
+    end
+  ' 2>/dev/null || echo "$CLAUDE_RESPONSE"
+  
+  echo ""
+  echo "Commit aborted. Claude review detected issues that must be fixed."
+  echo "Please address all issues before committing."
+  rm $TEMP_FILE
+  exit 1
+fi
+
+# Clean up
+rm $TEMP_FILE
+
+echo "Proceeding with commit..."
