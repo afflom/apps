@@ -156,12 +156,25 @@ jobs:
           cat > claude-prompt.txt << EOL
           You are tasked with implementing a solution for GitHub issue #${{ github.event.issue.number }}.
           
+          # IMPORTANT INSTRUCTIONS
+          You MUST implement the solution by modifying the codebase directly. You have FULL PERMISSION to:
+          1. Edit any existing files
+          2. Delete files if needed
+          3. Create new files
+          4. Make any changes required by the issue
+          
+          The ONLY files you CANNOT modify are:
+          - CLAUDE.md file
+          - Any files in the .husky/ directory
+          - Any pre-commit or pre-push hook scripts
+          - scripts/ensure-claude-code.sh
+          
           Your job is to:
           1. Analyze the issue description below
-          2. Implement the requested changes to the codebase
-          3. Test your changes to ensure they work correctly
-          4. Follow the project's code style and conventions
-          5. Do not modify any pre-commit or pre-push hooks
+          2. Implement the requested changes to the codebase - DO NOT ASK FOR PERMISSION, just implement the changes
+          3. Follow the project's code style and conventions
+          4. Write tests for your implementation
+          5. Make sure the implementation passes all pre-commit hooks
           
           GitHub Issue Details:
           ---------------------
@@ -326,20 +339,25 @@ jobs:
                   # Write directly to file to avoid heredoc issues with variable content
                   echo "You previously tried to implement a solution for GitHub issue #${{ github.event.issue.number }}, but the pre-commit hook detected issues with your implementation." > claude-retry-prompt.txt
                   echo "" >> claude-retry-prompt.txt
-                  echo "Original prompt:" >> claude-retry-prompt.txt
-                  echo "$(cat claude-prompt.txt)" >> claude-retry-prompt.txt
-                  echo "" >> claude-retry-prompt.txt
-                  echo "Pre-commit hook feedback:" >> claude-retry-prompt.txt
+                  echo "The pre-commit hook detected the following issues:" >> claude-retry-prompt.txt
                   echo "$HOOK_FEEDBACK" >> claude-retry-prompt.txt
                   echo "" >> claude-retry-prompt.txt
-                  echo "Please fix these issues and implement a complete solution that will pass the pre-commit checks." >> claude-retry-prompt.txt
-                  echo "Focus on:" >> claude-retry-prompt.txt
-                  echo "1. Removing placeholder and stub implementations" >> claude-retry-prompt.txt
-                  echo "2. Implementing a proper solution as specified in the issue" >> claude-retry-prompt.txt
-                  echo "3. Following best practices for TypeScript" >> claude-retry-prompt.txt
-                  echo "4. Ensuring code quality and proper testing" >> claude-retry-prompt.txt
+                  echo "# CRITICAL INSTRUCTIONS - READ CAREFULLY" >> claude-retry-prompt.txt
+                  echo "1. You MUST FIX ALL issues reported by the pre-commit hook." >> claude-retry-prompt.txt
+                  echo "2. You have FULL PERMISSION to modify any files in the codebase EXCEPT:" >> claude-retry-prompt.txt
+                  echo "   - CLAUDE.md" >> claude-retry-prompt.txt
+                  echo "   - Any files in .husky/ directory" >> claude-retry-prompt.txt
+                  echo "   - Any pre-commit or pre-push hook scripts" >> claude-retry-prompt.txt
+                  echo "   - scripts/ensure-claude-code.sh" >> claude-retry-prompt.txt
                   echo "" >> claude-retry-prompt.txt
-                  echo "Your implementation will be rejected again if it doesn't address all the issues reported by the pre-commit hook." >> claude-retry-prompt.txt
+                  echo "3. IMPLEMENT the solution DIRECTLY. Do NOT ask for permission - you already have it." >> claude-retry-prompt.txt
+                  echo "4. You MUST address EVERY issue reported by the pre-commit hook." >> claude-retry-prompt.txt
+                  echo "5. You MUST FOLLOW THE DIRECTIONS from the pre-commit hook output." >> claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Review the pre-commit feedback carefully - it tells you exactly what needs to be fixed." >> claude-retry-prompt.txt
+                  echo "Your implementation WILL BE REJECTED AGAIN if you don't address all issues in the pre-commit hook output." >> claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Implement the solution NOW. DO NOT ASK FOR PERMISSION. Just fix all the reported issues." >> claude-retry-prompt.txt
                   
                   # Create a Docker script to re-run Claude with feedback
                   echo '#!/bin/bash' > retry-claude.sh
