@@ -8,4 +8,12 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+echo "Checking for implementation stubs and mock features in staged files..."
+git diff --staged | $(git rev-parse --show-toplevel)/scripts/ensure-claude-code.sh
+
+if [ $? -ne 0 ]; then
+  echo "❌ Claude detected potential stub implementations. Please review Claude's feedback before committing."
+  exit 1
+fi
+
 echo "Proceeding with commit..."
