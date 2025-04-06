@@ -11,12 +11,26 @@ fi
 echo "Checking for stub implementations and weak tests with Claude..."
 echo "This is required for all commits."
 
-# Ensure Claude CLI is installed
+# Ensure Claude CLI is installed - use full path if needed
 if ! command -v claude &> /dev/null; then
-  echo "❌ Claude CLI not found. Claude review is mandatory."
-  echo "Please install Claude CLI before committing:"
-  echo "npm install -g @anthropic-ai/claude-code"
-  exit 1
+  # Try finding claude in known locations
+  CLAUDE_PATH=""
+  for path in "/home/codespace/nvm/current/bin/claude" "node_modules/.bin/claude" "/usr/local/bin/claude"; do
+    if [ -x "$path" ]; then
+      CLAUDE_PATH="$path"
+      break
+    fi
+  done
+
+  if [ -z "$CLAUDE_PATH" ]; then
+    echo "❌ Claude CLI not found. Claude review is mandatory."
+    echo "Please install Claude CLI before committing:"
+    echo "npm install -g @anthropic-ai/claude-code"
+    exit 1
+  else
+    echo "Using Claude at $CLAUDE_PATH"
+    alias claude="$CLAUDE_PATH"
+  fi
 fi
 
 # Get the list of staged files
@@ -72,8 +86,12 @@ echo "\n### Project Context:\n" >> $TEMP_FILE
 echo "This is a TypeScript PWA template project with GitHub Pages deployment." >> $TEMP_FILE
 echo "Focus on identifying any unimplemented or stubbed functionality that would make the template incomplete." >> $TEMP_FILE
 
-# Run Claude in non-interactive mode
-CLAUDE_RESPONSE=$(claude $TEMP_FILE --no-interactive 2>/dev/null)
+# Run Claude in non-interactive mode - use full path if we found it earlier
+if [ -n "$CLAUDE_PATH" ]; then
+  CLAUDE_RESPONSE=$("$CLAUDE_PATH" $TEMP_FILE --no-interactive 2>/dev/null)
+else
+  CLAUDE_RESPONSE=$(claude $TEMP_FILE --no-interactive 2>/dev/null)
+fi
 
 # Check if Claude execution failed
 if [ $? -ne 0 ]; then
