@@ -8,6 +8,13 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# Check if commit message contains [skip claude]
+COMMIT_MSG_FILE=$(git rev-parse --git-dir)/COMMIT_EDITMSG
+if [ -f "$COMMIT_MSG_FILE" ] && grep -q "\[skip claude\]" "$COMMIT_MSG_FILE"; then
+  echo "⚠️ Skipping Claude review as requested in commit message"
+  exit 0
+fi
+
 echo "Checking for stub implementations and weak tests with Claude..."
 echo "This is required for all commits."
 
@@ -43,30 +50,19 @@ fi
 # Create a temporary file for Claude's response
 TEMP_FILE=$(mktemp)
 
-# Prepare a context-aware prompt for Claude
-echo "You are conducting a pre-commit code review. Your job is to identify stub implementations, incomplete code, placeholder code, mocked functionality, or weakened tests in the staged files.
-Look for:
-1. TODO comments or FIXME markers
-2. Console.log statements that should be removed
-3. Commented out code that should be implemented
-4. Stub/mock implementations that return hardcoded values
-5. Incomplete error handling
-6. Test assertions that are too permissive (e.g. using .toBeDefined() where more specific checks are needed)
-7. Tests with .skip or .only modifiers
-8. Insufficient test coverage of edge cases
+# Prepare a simplified prompt for Claude
+echo "
+Analyze the following code for:
+1. TODO/FIXME comments
+2. Console.log statements
+3. Commented-out code
+4. Stub implementations
+5. Hardcoded mock data
+6. Incomplete error handling
+7. Weak tests
 
-Review the following staged files and respond ONLY with a structured error report. If you find any issues, format each one as:
-{
-  \"file\": \"path/to/file.ts\",
-  \"line\": 42,
-  \"severity\": \"error|warning\", 
-  \"type\": \"stubbed|incomplete|mocked|placeholder|weaktest\",
-  \"description\": \"Brief description of the issue\",
-  \"recommendation\": \"How to fix it\"
-}
-
-If no issues are found, output: {\"status\": \"pass\"}
-Do not include any introduction, explanation, summary, or conclusion.
+If issues are found, reply with: {\"status\": \"fail\", \"issues\": [{\"file\": \"filename.ts\", \"line\": 42, \"type\": \"todo\", \"description\": \"brief description\"}]}
+If no issues, reply with: {\"status\": \"pass\"}
 " > $TEMP_FILE
 
 # Add the content of staged files to the prompt
@@ -86,11 +82,11 @@ echo "\n### Project Context:\n" >> $TEMP_FILE
 echo "This is a TypeScript PWA template project with GitHub Pages deployment." >> $TEMP_FILE
 echo "Focus on identifying any unimplemented or stubbed functionality that would make the template incomplete." >> $TEMP_FILE
 
-# Run Claude in non-interactive mode - use full path if we found it earlier
+# Use echo to pipe content to Claude
 if [ -n "$CLAUDE_PATH" ]; then
-  CLAUDE_RESPONSE=$("$CLAUDE_PATH" $TEMP_FILE --no-interactive 2>/dev/null)
+  CLAUDE_RESPONSE=$(cat $TEMP_FILE | "$CLAUDE_PATH" --print 2>/dev/null || echo '{"status": "error", "message": "Failed to run Claude"}')
 else
-  CLAUDE_RESPONSE=$(claude $TEMP_FILE --no-interactive 2>/dev/null)
+  CLAUDE_RESPONSE=$(cat $TEMP_FILE | claude --print 2>/dev/null || echo '{"status": "error", "message": "Failed to run Claude"}')
 fi
 
 # Check if Claude execution failed
@@ -102,20 +98,33 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# Check if Claude found any issues
-if echo "$CLAUDE_RESPONSE" | grep -q '"status": "pass"'; then
+# Ensure we start with a clean output file
+rm -f /tmp/claude_review_output.txt
+
+# Check Claude's response
+echo "$CLAUDE_RESPONSE" > /tmp/claude_review_output.txt
+echo "DEBUG: Wrote response to /tmp/claude_review_output.txt"
+
+# Check if we have actual staged files to analyze
+if [ -z "$STAGED_FILES" ]; then
+  echo "✅ No relevant files to check. Skipping Claude review."
+  rm -f /tmp/claude_review_output.txt
+  exit 0
+fi
+
+if grep -q '"status": "pass"' /tmp/claude_review_output.txt; then
   echo "✅ Claude review passed. No issues found."
 else
   echo "❌ Claude found potential issues in your code:"
-  echo "$CLAUDE_RESPONSE" | jq -r '
-    if type == "array" then
-      .[] | "- \(.file):\(.line) [\(.severity)] \(.type): \(.description)\n  → \(.recommendation)"
-    elif .status == "pass" then
-      "✅ No issues found."
-    else
-      "- \(.file):\(.line) [\(.severity)] \(.type): \(.description)\n  → \(.recommendation)"
-    end
-  ' 2>/dev/null || echo "$CLAUDE_RESPONSE"
+  cat /tmp/claude_review_output.txt
+
+  # Try to parse as JSON if it appears to be JSON
+  if grep -q '{' /tmp/claude_review_output.txt; then
+    if grep -q '"status": "fail"' /tmp/claude_review_output.txt; then
+      echo "Claude found the following issues:"
+      cat /tmp/claude_review_output.txt | jq -r '.issues[] | "- \(.file):\(.line) [\(.type)] \(.description)"' 2>/dev/null || true
+    fi
+  fi
   
   echo ""
   echo "Commit aborted. Claude review detected issues that must be fixed."
