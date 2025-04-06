@@ -11,11 +11,11 @@ const mockAppComponent = (): void => {
         this.attachShadow({ mode: 'open' });
       }
     }
-    
+
     // Register mock component
     window.customElements.define('app-root', MockAppElement);
   }
-  
+
   if (!customElements.get('app-counter')) {
     class MockCounterElement extends HTMLElement {
       constructor() {
@@ -23,7 +23,7 @@ const mockAppComponent = (): void => {
         this.attachShadow({ mode: 'open' });
       }
     }
-    
+
     // Register mock component
     window.customElements.define('app-counter', MockCounterElement);
   }
@@ -43,7 +43,7 @@ describe('App Web Component', () => {
     rootElement = document.createElement('div');
     rootElement.id = 'app';
     document.body.appendChild(rootElement);
-    
+
     // Set up mock web components
     mockAppComponent();
   });
@@ -56,7 +56,7 @@ describe('App Web Component', () => {
     it('should initialize with default title', () => {
       // Create element
       const app = document.createElement('app-root');
-      
+
       // Add shadow root elements for testing
       const shadow = app.shadowRoot;
       if (shadow) {
@@ -64,9 +64,9 @@ describe('App Web Component', () => {
         title.textContent = 'TypeScript PWA Template';
         shadow.appendChild(title);
       }
-      
+
       document.body.appendChild(app);
-      
+
       // Check shadow DOM contents
       const titleEl = app.shadowRoot?.querySelector('h1');
       expect(titleEl).not.toBeNull();
@@ -77,7 +77,7 @@ describe('App Web Component', () => {
       // Create element with attribute
       const app = document.createElement('app-root');
       app.setAttribute('title', 'Custom App Title');
-      
+
       // Add shadow root elements for testing
       const shadow = app.shadowRoot;
       if (shadow) {
@@ -85,9 +85,9 @@ describe('App Web Component', () => {
         title.textContent = 'Custom App Title';
         shadow.appendChild(title);
       }
-      
+
       document.body.appendChild(app);
-      
+
       // Check shadow DOM contents
       const titleEl = app.shadowRoot?.querySelector('h1');
       expect(titleEl).not.toBeNull();
@@ -97,7 +97,7 @@ describe('App Web Component', () => {
     it('should render counter component', () => {
       // Create element
       const app = document.createElement('app-root');
-      
+
       // Add shadow root elements for testing
       const shadow = app.shadowRoot;
       if (shadow) {
@@ -105,9 +105,9 @@ describe('App Web Component', () => {
         counter.setAttribute('label', 'The counter value is');
         shadow.appendChild(counter);
       }
-      
+
       document.body.appendChild(app);
-      
+
       // Check shadow DOM contents
       const counterEl = app.shadowRoot?.querySelector('app-counter');
       expect(counterEl).not.toBeNull();
@@ -117,7 +117,7 @@ describe('App Web Component', () => {
     it('should render description text', () => {
       // Create element
       const app = document.createElement('app-root');
-      
+
       // Add shadow root elements for testing
       const shadow = app.shadowRoot;
       if (shadow) {
@@ -126,9 +126,9 @@ describe('App Web Component', () => {
         description.textContent = 'Click on the button to test the counter';
         shadow.appendChild(description);
       }
-      
+
       document.body.appendChild(app);
-      
+
       // Check shadow DOM contents
       const descEl = app.shadowRoot?.querySelector('.read-the-docs');
       expect(descEl).not.toBeNull();
@@ -139,20 +139,20 @@ describe('App Web Component', () => {
   describe('createApp helper function', () => {
     it('should create and append app to specified parent', () => {
       const app = createApp('#app', 'Test App');
-      
+
       expect(app.tagName.toLowerCase()).toBe('app-root');
       expect(app.getAttribute('title')).toBe('Test App');
       expect(rootElement.contains(app)).toBe(true);
     });
-    
+
     it('should use default title when not specified', () => {
       const app = createApp('#app');
-      
+
       expect(app.tagName.toLowerCase()).toBe('app-root');
       expect(app.getAttribute('title')).toBe(null); // Default title is applied internally
       expect(rootElement.contains(app)).toBe(true);
     });
-    
+
     it('should throw error if root element not found', () => {
       expect(() => createApp('#non-existent')).toThrow('Root element not found: #non-existent');
     });

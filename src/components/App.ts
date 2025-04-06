@@ -56,7 +56,7 @@ export class AppElement extends HTMLElement {
   // Lifecycle: when element is added to DOM
   connectedCallback(): void {
     // Ensure component is fully rendered
-    if (!this.shadowRoot!.querySelector('app-counter')) {
+    if (!this.shadowRoot?.querySelector('app-counter')) {
       this.render();
     }
   }
@@ -67,7 +67,7 @@ export class AppElement extends HTMLElement {
       this._title = newValue || 'TypeScript PWA Template';
 
       // Update title if already rendered
-      const titleElement = this.shadowRoot!.querySelector('h1');
+      const titleElement = this.shadowRoot?.querySelector('h1');
       if (titleElement) {
         titleElement.textContent = this._title;
       }
@@ -103,10 +103,13 @@ export class AppElement extends HTMLElement {
     container.appendChild(description);
 
     // Add to shadow root (clear existing content first)
-    if (this.shadowRoot!.childElementCount > 1) {
-      this.shadowRoot!.removeChild(this.shadowRoot!.lastChild!);
+    const shadowRoot = this.shadowRoot;
+    if (shadowRoot && shadowRoot.childElementCount > 1 && shadowRoot.lastChild) {
+      shadowRoot.removeChild(shadowRoot.lastChild);
     }
-    this.shadowRoot!.appendChild(container);
+    if (shadowRoot) {
+      shadowRoot.appendChild(container);
+    }
   }
 }
 
