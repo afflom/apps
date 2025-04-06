@@ -32,13 +32,21 @@ try {
 }
 
 // Check for GitHub token
-const githubToken = process.env.GITHUB_TOKEN;
+let githubToken = process.env.GITHUB_TOKEN;
+
+// In Codespaces, try to use the GitHub CLI to get a token
 if (!githubToken) {
-  console.error(`${COLORS.red}Error: GITHUB_TOKEN environment variable is not set.${COLORS.reset}`);
-  console.log('To deploy to dev environment:');
-  console.log('1. Create a personal access token with "workflow" scope at https://github.com/settings/tokens');
-  console.log('2. Export it as GITHUB_TOKEN in your shell: export GITHUB_TOKEN=your_token_here');
-  process.exit(1);
+  try {
+    console.log(`${COLORS.yellow}GITHUB_TOKEN not found in environment, trying GitHub CLI...${COLORS.reset}`);
+    githubToken = execSync('gh auth token', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+    console.log(`${COLORS.green}Successfully obtained token from GitHub CLI${COLORS.reset}`);
+  } catch (error) {
+    console.error(`${COLORS.red}Error: Unable to obtain GitHub token.${COLORS.reset}`);
+    console.log('To deploy to dev environment:');
+    console.log('1. Create a personal access token with "workflow" scope at https://github.com/settings/tokens');
+    console.log('2. Export it as GITHUB_TOKEN in your shell: export GITHUB_TOKEN=your_token_here');
+    process.exit(1);
+  }
 }
 
 // Get repo details
