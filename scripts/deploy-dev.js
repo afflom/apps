@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const readline = require('readline');
-const https = require('https');
+// Use ESM imports since package.json has "type": "module"
+import { execSync } from 'child_process';
+import readline from 'readline';
+import https from 'https';
 
 const rl = readline.createInterface({
   input: process.stdin,
