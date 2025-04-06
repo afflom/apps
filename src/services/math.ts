@@ -1,28 +1,89 @@
 import { UniversalNumber } from '@uor-foundation/math-js';
-// Import the correct module for the actual API - using a mock version for our example
-// This would need to be adjusted based on the actual API structure
-// Since we don't have full API knowledge, we'll create a mock interface
-
-// Define the interface for PrimeMath
+// PrimeMath utility implementation
 interface IPrimeMath {
   gcd: (a: number, b: number) => { toString: () => string };
   isPrime: (n: number) => boolean;
   nextPrime: (n: number) => { toString: () => string };
 }
 
-// Create a mock object
+// Real implementation of PrimeMath
 const PrimeMath: IPrimeMath = {
+  // Greatest common divisor using Euclidean algorithm
   gcd: (a: number, b: number) => {
-    // Mock implementation for the example
-    return { toString: () => String(Math.floor(a / b) * b) };
+    const calculateGcd = (x: number, y: number): number => {
+      return y === 0 ? x : calculateGcd(y, x % y);
+    };
+    const result = calculateGcd(Math.abs(a), Math.abs(b));
+    return { toString: () => String(result) };
   },
+
+  // Proper prime number check
   isPrime: (n: number) => {
-    // Mock implementation for the example
-    return n > 1 && n <= 3;
+    if (n <= 1) {
+      return false;
+    }
+    if (n <= 3) {
+      return true;
+    }
+    if (n % 2 === 0 || n % 3 === 0) {
+      return false;
+    }
+
+    // Check for divisibility using 6k±1 optimization
+    let i = 5;
+    while (i * i <= n) {
+      if (n % i === 0 || n % (i + 2) === 0) {
+        return false;
+      }
+      i += 6;
+    }
+    return true;
   },
+
+  // Find the next prime number
   nextPrime: (n: number) => {
-    // Mock implementation for the example
-    return { toString: () => String(n < 2 ? 2 : n + 1) };
+    const findNextPrime = (start: number): number => {
+      let next = start + 1;
+      // Make sure next is odd
+      next = next % 2 === 0 ? next + 1 : next;
+
+      // Limit search to a reasonable number of iterations
+      const maxIterations = 1000;
+      let iterations = 0;
+
+      while (iterations < maxIterations) {
+        iterations++;
+        let isPrime = true;
+        // Check if next is prime
+        if (next <= 1) {
+          isPrime = false;
+        } else if (next <= 3) {
+          isPrime = true;
+        } else if (next % 2 === 0 || next % 3 === 0) {
+          isPrime = false;
+        } else {
+          let i = 5;
+          while (i * i <= next) {
+            if (next % i === 0 || next % (i + 2) === 0) {
+              isPrime = false;
+              break;
+            }
+            i += 6;
+          }
+        }
+
+        if (isPrime) {
+          return next;
+        }
+        next += 2; // Try next odd number
+      }
+
+      // Fallback for extreme cases
+      return start + 1;
+    };
+
+    const result = findNextPrime(n);
+    return { toString: () => String(result) };
   },
 };
 

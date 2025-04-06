@@ -46,16 +46,39 @@ if (!githubToken) {
       console.log(`${COLORS.yellow}Running in pre-push hook environment.${COLORS.reset}`);
       console.log(`${COLORS.yellow}Deployment verification is required. Attempting to continue...${COLORS.reset}`);
       
-      // Try alternative token access methods for pre-push context
+      // If we're running in pre-push hook context but don't have a token yet
+      // Try some additional access methods specific to GitHub Codespaces or Actions
       try {
-        githubToken = execSync('git config --get github.token', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
-        console.log(`${COLORS.green}Successfully obtained token from git config${COLORS.reset}`);
+        // Try getting token from git config
+        try {
+          githubToken = execSync('git config --get github.token', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+          console.log(`${COLORS.green}Successfully obtained token from git config${COLORS.reset}`);
+        } catch (configError) {
+          // Check for GitHub CLI presence and try to get token
+          if (process.env.CODESPACES || process.env.GITHUB_CODESPACE_TOKEN) {
+            try {
+              githubToken = execSync('gh auth token', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+              console.log(`${COLORS.green}Successfully obtained token from GitHub CLI in Codespace${COLORS.reset}`);
+            } catch (ghError) {
+              // Try one more method for GitHub Actions
+              if (process.env.GITHUB_TOKEN) {
+                githubToken = process.env.GITHUB_TOKEN;
+                console.log(`${COLORS.green}Using GITHUB_TOKEN from environment${COLORS.reset}`);
+              } else {
+                throw new Error("All authentication methods failed");
+              }
+            }
+          } else {
+            throw new Error("No GitHub token available and not in a Codespace");
+          }
+        }
       } catch (error) {
         console.error(`${COLORS.red}Error: Unable to obtain GitHub token.${COLORS.reset}`);
         console.log('To deploy to dev environment:');
         console.log('1. Create a personal access token with "workflow" scope at https://github.com/settings/tokens');
         console.log('2. Export it as GITHUB_TOKEN in your shell: export GITHUB_TOKEN=your_token_here');
         console.log('   Or save it to git config: git config github.token your_token_here');
+        console.log('   Or run "gh auth login" if using GitHub CLI');
         process.exit(1);
       }
     } else {

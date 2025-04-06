@@ -19,6 +19,22 @@ fi
 
 echo ""
 echo "Deploying to dev environment to verify deployment..."
+
+# Check if we're in a GitHub Codespace
+if [ -n "$CODESPACES" ] || [ -n "$GITHUB_CODESPACE_TOKEN" ]; then
+  echo "Running in GitHub Codespace, using GitHub CLI for authentication..."
+  # This uses the built-in Codespace token with the GitHub CLI
+  export GITHUB_TOKEN=$(gh auth token)
+  
+  if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to authenticate with GitHub CLI."
+    echo "Try running 'gh auth login' first."
+    exit 1
+  fi
+  
+  echo "Successfully obtained GitHub token from GitHub CLI."
+fi
+
 # Set flag to indicate we're running in pre-push hook context
 export GH_WORKFLOW_DISPATCH=true
 node scripts/deploy-dev.js --no-interactive
