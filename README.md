@@ -14,6 +14,7 @@ A fully-featured TypeScript PWA template that deploys to GitHub Pages using GitH
 - 📦 Uses `@uor-foundation/math-js` for demonstration
 - 🐳 DevContainer and GitHub Codespaces ready
 - 🤖 Claude Code integration for AI-assisted development
+- 🔧 Automated issue implementation by Claude AI
 
 ## Getting Started
 
@@ -170,6 +171,37 @@ The DevContainer and Codespaces environments include Claude Code for AI-assisted
    - Automatic IDE integration
    
 See `.github/CLAUDE_CODE_GUIDE.md` for detailed usage instructions.
+
+## Automated Issue Implementation with Claude
+
+This repository includes an automated GitHub Actions workflow that uses Claude AI to implement solutions for GitHub issues labeled with "claude".
+
+### How It Works
+
+1. An issue is created with detailed requirements
+2. A repository maintainer adds the "claude" label
+3. Claude automatically:
+   - Analyzes the issue
+   - Implements the requested changes
+   - Creates a pull request
+   - Links the PR back to the issue
+
+### Usage for Contributors
+
+- Create detailed issues using our templates
+- Include specific acceptance criteria
+- Maintainers will evaluate if the issue is suitable for Claude
+- If appropriate, a maintainer will add the "claude" label
+
+### For Maintainers
+
+Only repository maintainers can add the "claude" label, which triggers the automation. 
+
+```
+⚠️ Important: The repository must have the ANTHROPIC_API_KEY secret configured.
+```
+
+See `.github/CLAUDE_AUTOMATION.md` for complete documentation.
 
 ## License
 

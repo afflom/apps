@@ -1,0 +1,264 @@
+name: Claude Automation
+
+on:
+  issues:
+    types:
+      - labeled
+
+# Only maintainers should be able to assign the claude label to trigger this workflow
+# The permissions are for the GITHUB_TOKEN used by Claude
+permissions:
+  contents: write  # Needed to create branches and push changes
+  pull-requests: write  # Needed to create pull requests
+  issues: write  # Needed to comment on issues
+
+jobs:
+  check-label:
+    name: Check if label is claude
+    runs-on: ubuntu-latest
+    if: ${{ github.event.label.name == 'claude' }}
+    
+    steps:
+      - name: Check if issue has enough information
+        id: check-issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            // Check if issue description is too short
+            if (issue.data.body.length < 100) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `❌ This issue doesn't have enough details for Claude to implement. Please add more information and request the label to be added again.`
+              });
+              
+              // Remove the claude label
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'claude'
+              });
+              
+              return core.setFailed('Issue description is not detailed enough');
+            }
+            
+            console.log('Issue has enough details for Claude to implement');
+            return issue.data.body;
+
+  implement-with-claude:
+    name: Implement with Claude
+    needs: check-label
+    runs-on: ubuntu-latest
+    
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+      ISSUE_BODY: ${{ github.event.issue.body }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+        
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Claude CLI
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          
+      - name: Create branch for changes
+        run: |
+          # Create a sanitized branch name from the issue title
+          BRANCH_NAME="claude/issue-${{ github.event.issue.number }}"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          
+          git config --global user.name "Claude AI"
+          git config --global user.email "claude-ai@anthropic.com"
+          
+          git checkout -b $BRANCH_NAME
+      
+      - name: Prepare issue description for Claude
+        run: |
+          # Create a file with the issue details
+          cat > issue-details.md << EOL
+          # Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+          
+          ${{ github.event.issue.body }}
+          EOL
+      
+      - name: Run Claude to implement solution
+        id: claude-implementation
+        run: |
+          # Create a prompt file for Claude
+          cat > claude-prompt.txt << EOL
+          You are tasked with implementing a solution for GitHub issue #${{ github.event.issue.number }}.
+          
+          Your job is to:
+          1. Analyze the issue description below
+          2. Implement the requested changes to the codebase
+          3. Test your changes to ensure they work correctly
+          4. Follow the project's code style and conventions
+          5. Do not modify any pre-commit or pre-push hooks
+          
+          GitHub Issue Details:
+          ---------------------
+          Title: ${{ github.event.issue.title }}
+          
+          $(cat issue-details.md)
+          ---------------------
+          
+          Please implement a solution and provide a detailed explanation of your changes for the PR description.
+          EOL
+          
+          # Run Claude to implement the solution
+          echo "Running Claude to implement the solution..."
+          
+          # Implement retry logic for Claude API
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          SUCCESS=false
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = false ]; do
+            # Capture both stdout and stderr
+            if claude -p "$(cat claude-prompt.txt)" > claude-response.md 2>claude-error.log; then
+              SUCCESS=true
+              echo "Claude completed implementation successfully"
+            else
+              RETRY_COUNT=$((RETRY_COUNT+1))
+              ERROR_CODE=$?
+              echo "Claude execution failed with exit code $ERROR_CODE (Attempt $RETRY_COUNT of $MAX_RETRIES)"
+              
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                # Wait before retrying (exponential backoff)
+                SLEEP_TIME=$((10 * RETRY_COUNT))
+                echo "Waiting $SLEEP_TIME seconds before retrying..."
+                sleep $SLEEP_TIME
+              else
+                # Log the error and provide debugging information
+                echo "::error::Claude failed after $MAX_RETRIES attempts"
+                echo "::error::Last error log:"
+                cat claude-error.log
+                
+                # Create a comment on the issue about the failure
+                gh issue comment ${{ github.event.issue.number }} --body "❌ Claude failed to implement this issue after multiple attempts. A maintainer will need to investigate."
+                
+                # Remove the claude label
+                gh issue edit ${{ github.event.issue.number }} --remove-label claude
+                
+                exit 1
+              fi
+            fi
+          done
+          
+          # Verify we have a meaningful response (not just an error message)
+          RESPONSE_SIZE=$(stat -c%s claude-response.md)
+          if [ $RESPONSE_SIZE -lt 100 ]; then
+            echo "::warning::Claude response seems too short, might not contain implementation details"
+            cat claude-response.md
+          fi
+      
+      - name: Verify changes
+        run: |
+          # Run linting and tests to verify Claude's changes
+          npm run typecheck
+          npm run lint
+          npm run test
+          
+          # If any of these fail, the workflow will stop
+      
+      - name: Commit and push changes
+        run: |
+          # Check if there are any changes
+          if [[ -n $(git status --porcelain) ]]; then
+            # Stage all changes
+            git add .
+            
+            # Create commit message
+            git commit -m "Fix issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+            
+            Implemented by Claude AI
+            
+            🤖 Generated with [Claude Code](https://claude.ai/code)
+            
+            Co-Authored-By: Claude <noreply@anthropic.com>"
+            
+            # Push to the new branch
+            git push -u origin $BRANCH_NAME
+            
+            echo "Changes committed and pushed to branch $BRANCH_NAME"
+          else
+            echo "::warning::No changes were made by Claude"
+            exit 1
+          fi
+      
+      - name: Create Pull Request
+        id: create-pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Extract Claude's reasoning for PR description
+            const fs = require('fs');
+            let claudeResponse = '';
+            
+            try {
+              claudeResponse = fs.readFileSync('claude-response.md', 'utf8');
+            } catch (error) {
+              console.log('Could not read Claude response, using default message');
+              claudeResponse = 'Changes implemented by Claude.';
+            }
+            
+            // Create PR
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Fix issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}`,
+              body: `This PR addresses issue #${{ github.event.issue.number }}
+              
+              ## Implementation Details
+              
+              ${claudeResponse}
+              
+              ## Closes
+              
+              Closes #${{ github.event.issue.number }}
+              
+              ---
+              🤖 This PR was created automatically by Claude AI in response to the issue being labeled with "claude".
+              `,
+              head: process.env.BRANCH_NAME,
+              base: 'main'
+            });
+            
+            console.log(`PR created: ${pr.data.html_url}`);
+            return pr.data.number;
+            
+      - name: Add PR comment to issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: `I've created a pull request to address this issue: #${{ steps.create-pr.outputs.result }}
+              
+              Please review the implementation and provide feedback.
+              
+              🤖 - Claude`
+            });
