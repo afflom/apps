@@ -3,20 +3,35 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# Allow only one concurrent deployment per environment
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: "pages-${{ github.workflow }}-${{ github.event.inputs.environment || (github.event_name == 'pull_request' && 'staging') || 'production' }}"
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      preview_url: ${{ steps.build-step.outputs.preview_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,20 +56,95 @@ jobs:
           npm run lint
           npm run format:check
       
+      - name: Set Environment Variables
+        id: env-vars
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+            echo "BASE_PATH=/${{ github.event.repository.name }}/${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "ENVIRONMENT=staging" >> $GITHUB_ENV
+            echo "BASE_PATH=/${{ github.event.repository.name }}/staging" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+            echo "BASE_PATH=/${{ github.event.repository.name }}" >> $GITHUB_ENV
+          fi
+          echo "environment=${{ env.ENVIRONMENT }}" >> $GITHUB_OUTPUT
+      
       - name: Build
-        run: npm run build
+        id: build-step
+        run: |
+          # Update base path in vite.config.ts for the environment
+          sed -i "s|base: './'|base: '${{ env.BASE_PATH }}'|" vite.config.ts
+          
+          # Build with environment variables
+          npm run build
+          
+          # Output preview URL for PR comments
+          if [[ "${{ env.ENVIRONMENT }}" == "staging" ]]; then
+            echo "preview_url=https://${{ github.repository_owner }}.github.io${{ env.BASE_PATH }}" >> $GITHUB_OUTPUT
+          fi
       
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
+      - name: Create environment subfolder
+        if: env.ENVIRONMENT != 'production'
+        run: |
+          mkdir -p _site/${{ env.ENVIRONMENT }}
+          cp -r dist/* _site/${{ env.ENVIRONMENT }}/
+      
+      - name: Copy to root for production
+        if: env.ENVIRONMENT == 'production'
+        run: |
+          mkdir -p _site
+          cp -r dist/* _site/
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'dist'
+          path: '_site'
   
-  deploy:
+  deploy-dev:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev'
     environment:
-      name: github-pages
+      name: dev
+      url: ${{ steps.deployment.outputs.page_url }}/${{ github.event.repository.name }}/dev
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+  
+  deploy-staging:
+    if: github.event_name == 'pull_request'
+    environment:
+      name: staging
+      url: ${{ steps.deployment.outputs.page_url }}/${{ github.event.repository.name }}/staging
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      
+      - name: Add PR Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const previewUrl = '${{ needs.build.outputs.preview_url }}';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ Staging deployment successful! You can preview the changes at: [Preview Link](${previewUrl})`
+            });
+  
+  deploy-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build

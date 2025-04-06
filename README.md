@@ -49,13 +49,48 @@ npm run preview
 
 ## Deployment
 
-This template automatically deploys to GitHub Pages using GitHub Actions when changes are pushed to the `main` branch.
+This template uses a multi-environment deployment approach with GitHub Pages:
 
-### GitHub Pages Setup
+- **Dev Environment**: For local testing and development
+- **Staging Environment**: Automatically deployed for Pull Requests
+- **Production Environment**: Deployed from the main branch
+
+### Environment Setup
 
 1. Go to your repository settings
 2. Navigate to the Pages section
 3. Set the source to "GitHub Actions"
+4. Go to Settings > Environments and create three environments:
+   - `dev`
+   - `staging`
+   - `production`
+
+### Deployment Methods
+
+#### Dev Environment
+
+There are two ways to deploy to the dev environment:
+
+1. **With Git Push**: 
+   - When pushing changes, the pre-push hook will ask if you want to deploy to dev
+   - Requires a GitHub token exported as `GITHUB_TOKEN` in your environment
+
+2. **Manual Deployment**:
+   ```bash
+   # Export your GitHub token first
+   export GITHUB_TOKEN=your_github_token
+   
+   # Run the deployment script
+   npm run deploy:dev
+   ```
+
+#### Staging Environment
+
+Automatically deployed when a Pull Request is created or updated. A comment with a preview link will be added to the PR.
+
+#### Production Environment
+
+Automatically deployed when changes are pushed to the `main` branch.
 
 ## In-Browser Testing
 
