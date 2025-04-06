@@ -150,12 +150,26 @@ jobs:
             cat claude-prompt.txt
             echo "-----------------------------------"
             
-            if claude -p "$(cat claude-prompt.txt)" | tee claude-response.md 2> >(tee claude-error.log >&2); then
-              SUCCESS=true
-              echo "Claude completed implementation successfully"
+            # Run Claude and save output to a file while also displaying it in logs
+            claude -p "$(cat claude-prompt.txt)" > claude-response.md 2> claude-error.log
+            CLAUDE_EXIT_CODE=$?
+            
+            # Always show the output in the logs regardless of success/failure
+            echo "-----------------------------------"
+            echo "Claude output (from response file):"
+            cat claude-response.md
+            
+            if [ -s claude-error.log ]; then
               echo "-----------------------------------"
-              echo "Claude response:"
-              cat claude-response.md
+              echo "Claude error output:"
+              cat claude-error.log
+            fi
+            
+            # Check if Claude ran successfully
+            if [ $CLAUDE_EXIT_CODE -eq 0 ]; then
+              SUCCESS=true
+              echo "-----------------------------------"
+              echo "Claude completed implementation successfully"
             else
               RETRY_COUNT=$((RETRY_COUNT+1))
               ERROR_CODE=$?
@@ -190,12 +204,8 @@ jobs:
           RESPONSE_SIZE=$(stat -c%s claude-response.md)
           if [ $RESPONSE_SIZE -lt 100 ]; then
             echo "::warning::Claude response seems too short, might not contain implementation details"
-            echo "Content of response file:"
-            cat claude-response.md
           else
             echo "Claude response size: $RESPONSE_SIZE bytes, which seems adequate"
-            echo "First 20 lines of response file:"
-            head -n 20 claude-response.md
           fi
       
       - name: Verify changes
