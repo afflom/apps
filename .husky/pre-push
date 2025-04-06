@@ -4,7 +4,7 @@ npm run typecheck && npm run lint && npm run format:check && npx vitest run src/
 # Ask if the user wants to deploy to dev environment
 echo ""
 read -p "Do you want to deploy to the dev environment? (y/n) " DEPLOY_TO_DEV
-if [[ "$DEPLOY_TO_DEV" == "y" ]]; then
+if [ "$DEPLOY_TO_DEV" = "y" ]; then
   echo "Triggering dev deployment workflow..."
   # Get current branch
   BRANCH=$(git symbolic-ref --short HEAD)
@@ -13,18 +13,18 @@ if [[ "$DEPLOY_TO_DEV" == "y" ]]; then
   REMOTE_URL=$(git remote get-url origin)
   
   # For HTTPS URLs
-  if [[ $REMOTE_URL == https://github.com/* ]]; then
-    REPO_PATH=$(echo $REMOTE_URL | sed 's|https://github.com/||' | sed 's|.git$||')
+  if [ "$(echo "$REMOTE_URL" | grep -c "https://github.com/")" -gt 0 ]; then
+    REPO_PATH=$(echo "$REMOTE_URL" | sed 's|https://github.com/||' | sed 's|.git$||')
   # For SSH URLs
-  elif [[ $REMOTE_URL == git@github.com:* ]]; then
-    REPO_PATH=$(echo $REMOTE_URL | sed 's|git@github.com:||' | sed 's|.git$||')
+  elif [ "$(echo "$REMOTE_URL" | grep -c "git@github.com:")" -gt 0 ]; then
+    REPO_PATH=$(echo "$REMOTE_URL" | sed 's|git@github.com:||' | sed 's|.git$||')
   else
     echo "Unsupported remote URL format. Cannot determine repo details for workflow dispatch."
     exit 0
   fi
   
   # Check if personal access token is available
-  if [[ -z "${GITHUB_TOKEN}" ]]; then
+  if [ -z "${GITHUB_TOKEN}" ]; then
     echo "WARNING: GITHUB_TOKEN environment variable not set. Cannot trigger workflow."
     echo "To enable automated dev deployments:"
     echo "1. Create a personal access token with 'workflow' scope at https://github.com/settings/tokens"
