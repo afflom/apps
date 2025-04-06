@@ -1,43 +1,16 @@
 echo "Running essential checks for push..."
 npm run typecheck && npm run lint && npm run format:check && npx vitest run src/simple.test.ts src/utils/dom.test.ts
 
-# Ask if the user wants to deploy to dev environment
 echo ""
-read -p "Do you want to deploy to the dev environment? (y/n) " DEPLOY_TO_DEV
-if [ "$DEPLOY_TO_DEV" = "y" ]; then
-  echo "Triggering dev deployment workflow..."
-  # Get current branch
-  BRANCH=$(git symbolic-ref --short HEAD)
-  
-  # Extract repo details from the remote URL
-  REMOTE_URL=$(git remote get-url origin)
-  
-  # For HTTPS URLs
-  if [ "$(echo "$REMOTE_URL" | grep -c "https://github.com/")" -gt 0 ]; then
-    REPO_PATH=$(echo "$REMOTE_URL" | sed 's|https://github.com/||' | sed 's|.git$||')
-  # For SSH URLs
-  elif [ "$(echo "$REMOTE_URL" | grep -c "git@github.com:")" -gt 0 ]; then
-    REPO_PATH=$(echo "$REMOTE_URL" | sed 's|git@github.com:||' | sed 's|.git$||')
-  else
-    echo "Unsupported remote URL format. Cannot determine repo details for workflow dispatch."
-    exit 0
-  fi
-  
-  # Check if personal access token is available
-  if [ -z "${GITHUB_TOKEN}" ]; then
-    echo "WARNING: GITHUB_TOKEN environment variable not set. Cannot trigger workflow."
-    echo "To enable automated dev deployments:"
-    echo "1. Create a personal access token with 'workflow' scope at https://github.com/settings/tokens"
-    echo "2. Export it as GITHUB_TOKEN in your shell environment."
-    exit 0
-  fi
-  
-  # Trigger the workflow
-  curl -X POST \
-    -H "Accept: application/vnd.github.v3+json" \
-    -H "Authorization: token ${GITHUB_TOKEN}" \
-    "https://api.github.com/repos/${REPO_PATH}/actions/workflows/deploy.yml/dispatches" \
-    -d "{\"ref\":\"${BRANCH}\",\"inputs\":{\"environment\":\"dev\"}}"
-  
-  echo "Dev deployment triggered. Check GitHub Actions for progress."
+echo "Running dev deployment before pushing to production..."
+
+# Use npm run deploy:dev script which is designed for this purpose
+npm run deploy:dev -- --no-interactive
+
+# Check if deployment was successful
+if [ $? -ne 0 ]; then
+  echo "ERROR: Dev deployment failed. Fix deployment issues before pushing to production."
+  exit 1
 fi
+
+echo "Dev deployment completed successfully."

@@ -58,12 +58,10 @@ try {
   process.exit(1);
 }
 
-rl.question(`${COLORS.yellow}Do you want to deploy to the dev environment? (y/n) ${COLORS.reset}`, (answer) => {
-  if (answer.toLowerCase() !== 'y') {
-    console.log('Deployment canceled.');
-    rl.close();
-    return;
-  }
+// Check if running in non-interactive mode
+const nonInteractive = process.argv.includes('--no-interactive');
+
+const deployApp = () => {
 
   // Get current branch
   const currentBranch = execSync('git symbolic-ref --short HEAD').toString().trim();
@@ -92,34 +90,156 @@ rl.question(`${COLORS.yellow}Do you want to deploy to the dev environment? (y/n)
     }
   };
   
-  // Send the request
-  const req = https.request(options, (res) => {
-    if (res.statusCode === 204) {
-      console.log(`${COLORS.green}Deployment triggered successfully!${COLORS.reset}`);
-      console.log(`${COLORS.blue}Check your GitHub Actions workflow status at: https://github.com/${repoPath}/actions${COLORS.reset}`);
-      console.log(`${COLORS.blue}Your app will be available at: https://<username>.github.io/${repoPath.split('/')[1]}/dev${COLORS.reset}`);
-    } else {
-      console.error(`${COLORS.red}Error: Received status code ${res.statusCode}${COLORS.reset}`);
+  return new Promise((resolve, reject) => {
+    // Send the request
+    const req = https.request(options, (res) => {
       let responseData = '';
       res.on('data', (chunk) => {
         responseData += chunk;
       });
+      
       res.on('end', () => {
-        console.error(`${COLORS.red}Response: ${responseData}${COLORS.reset}`);
+        if (res.statusCode === 204) {
+          console.log(`${COLORS.green}Deployment triggered successfully!${COLORS.reset}`);
+          console.log(`${COLORS.blue}Check your GitHub Actions workflow status at: https://github.com/${repoPath}/actions${COLORS.reset}`);
+          console.log(`${COLORS.blue}Your app will be available at: https://<username>.github.io/${repoPath.split('/')[1]}/dev${COLORS.reset}`);
+          
+          // Wait for workflow to complete if in non-interactive mode
+          if (nonInteractive) {
+            checkWorkflowStatus(repoPath, githubToken, resolve, reject);
+          } else {
+            resolve(true);
+          }
+        } else {
+          const errorMessage = `Error: Received status code ${res.statusCode}. Response: ${responseData}`;
+          console.error(`${COLORS.red}${errorMessage}${COLORS.reset}`);
+          reject(new Error(errorMessage));
+        }
       });
-    }
+    });
+    
+    req.on('error', (error) => {
+      console.error(`${COLORS.red}Error: ${error.message}${COLORS.reset}`);
+      reject(error);
+    });
+    
+    req.write(data);
+    req.end();
   });
-  
-  req.on('error', (error) => {
-    console.error(`${COLORS.red}Error: ${error.message}${COLORS.reset}`);
-  });
-  
-  req.write(data);
-  req.end();
-  
-  rl.close();
-});
+}
 
-rl.on('close', () => {
-  console.log(`${COLORS.blue}=== Deployment script completed ===${COLORS.reset}`);
-});
+// Function to check workflow status
+const checkWorkflowStatus = (repoPath, githubToken, resolve, reject) => {
+  console.log(`${COLORS.yellow}Waiting for workflow to complete...${COLORS.reset}`);
+  
+  // Sleep briefly to allow GitHub API to register the workflow
+  setTimeout(() => {
+    let maxTries = 30;
+    let tries = 0;
+    
+    const checkStatus = () => {
+      tries++;
+      
+      // Get the latest run ID for the workflow
+      try {
+        const runsResponse = execSync(`curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${githubToken}" "https://api.github.com/repos/${repoPath}/actions/workflows/deploy.yml/runs?per_page=1"`).toString();
+        const runsData = JSON.parse(runsResponse);
+        
+        if (!runsData.workflow_runs || runsData.workflow_runs.length === 0) {
+          if (tries >= maxTries) {
+            const errorMessage = "Timed out waiting for workflow to start";
+            console.error(`${COLORS.red}ERROR: ${errorMessage}${COLORS.reset}`);
+            reject(new Error(errorMessage));
+            return;
+          }
+          
+          console.log(`${COLORS.yellow}Waiting for workflow to start... (${tries}/${maxTries})${COLORS.reset}`);
+          setTimeout(checkStatus, 5000);
+          return;
+        }
+        
+        const runId = runsData.workflow_runs[0].id;
+        const status = runsData.workflow_runs[0].status;
+        const conclusion = runsData.workflow_runs[0].conclusion;
+        
+        console.log(`${COLORS.blue}Deployment status: ${status} (${tries}/${maxTries})${COLORS.reset}`);
+        
+        if (status === 'completed') {
+          if (conclusion === 'success') {
+            console.log(`${COLORS.green}Dev deployment completed successfully.${COLORS.reset}`);
+            resolve(true);
+          } else {
+            const errorMessage = `Dev deployment failed with conclusion: ${conclusion}`;
+            console.error(`${COLORS.red}ERROR: ${errorMessage}${COLORS.reset}`);
+            console.error(`${COLORS.red}Check GitHub Actions for more details: https://github.com/${repoPath}/actions${COLORS.reset}`);
+            reject(new Error(errorMessage));
+          }
+          return;
+        }
+        
+        if (status === 'failure' || status === 'cancelled') {
+          const errorMessage = `Dev deployment failed with status: ${status}`;
+          console.error(`${COLORS.red}ERROR: ${errorMessage}${COLORS.reset}`);
+          console.error(`${COLORS.red}Check GitHub Actions for more details: https://github.com/${repoPath}/actions${COLORS.reset}`);
+          reject(new Error(errorMessage));
+          return;
+        }
+        
+        if (tries >= maxTries) {
+          const errorMessage = "Timed out waiting for workflow to complete";
+          console.error(`${COLORS.red}ERROR: ${errorMessage}${COLORS.reset}`);
+          console.error(`${COLORS.red}Check GitHub Actions for current status: https://github.com/${repoPath}/actions${COLORS.reset}`);
+          reject(new Error(errorMessage));
+          return;
+        }
+        
+        // Continue checking
+        setTimeout(checkStatus, 10000);
+      } catch (error) {
+        console.error(`${COLORS.red}Error checking workflow status: ${error.message}${COLORS.reset}`);
+        if (tries >= maxTries) {
+          reject(error);
+        } else {
+          setTimeout(checkStatus, 10000);
+        }
+      }
+    };
+    
+    checkStatus();
+  }, 5000);
+};
+
+// Run the deployment based on the mode
+if (nonInteractive) {
+  deployApp()
+    .then(() => {
+      console.log(`${COLORS.blue}=== Deployment script completed successfully ===${COLORS.reset}`);
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error(`${COLORS.red}=== Deployment failed: ${error.message} ===${COLORS.reset}`);
+      process.exit(1);
+    });
+} else {
+  rl.question(`${COLORS.yellow}Do you want to deploy to the dev environment? (y/n) ${COLORS.reset}`, (answer) => {
+    if (answer.toLowerCase() !== 'y') {
+      console.log('Deployment canceled.');
+      rl.close();
+      return;
+    }
+    
+    deployApp()
+      .then(() => {
+        rl.close();
+      })
+      .catch((error) => {
+        console.error(`${COLORS.red}=== Deployment failed: ${error.message} ===${COLORS.reset}`);
+        rl.close();
+        process.exit(1);
+      });
+  });
+  
+  rl.on('close', () => {
+    console.log(`${COLORS.blue}=== Deployment script completed ===${COLORS.reset}`);
+  });
+}
