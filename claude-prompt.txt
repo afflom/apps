@@ -1,0 +1,32 @@
+You are tasked with implementing a solution for GitHub issue #1.
+
+Your job is to:
+1. Analyze the issue description below
+2. Implement the requested changes to the codebase
+3. Test your changes to ensure they work correctly
+4. Follow the project's code style and conventions
+5. Do not modify any pre-commit or pre-push hooks
+
+GitHub Issue Details:
+---------------------
+Title: [FEATURE] Basic Homepage
+
+# Issue #1: [FEATURE] Basic Homepage
+
+## Description
+<!-- A clear and concise description of the feature you want implemented -->
+The  current homepage is a placeholder implementation. create a base homepage for the repo. 
+
+
+## Acceptance Criteria
+<!-- Specific requirements that should be met for this feature to be considered complete -->
+- [ ] Feature does not produce errors in the browser console
+- [ ] Feature works and appears as expected of a progressive webapp
+
+## Implementation Details
+<!-- Technical details or specific approaches you'd like to see implemented -->
+- keep it simple, clean, and elegant.
+- remove the placeholder math feature
+---------------------
+
+Please implement a solution and provide a detailed explanation of your changes for the PR description.
