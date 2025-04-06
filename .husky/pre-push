@@ -1,6 +1,12 @@
+#!/bin/sh
 
 echo "Running essential checks for push..."
-npm run typecheck && npm run lint && npm run format:check && npx vitest run src/simple.test.ts src/utils/dom.test.ts
+npm run typecheck && npm run lint && npm run format:check && npm run test
+
+if [ $? -ne 0 ]; then
+  echo "ERROR: Tests or checks failed. Fix issues before pushing."
+  exit 1
+fi
 
 echo ""
 echo "Building app for GitHub Pages deployment validation..."
@@ -11,7 +17,15 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# This will be triggered automatically when pushed to GitHub
-# The GitHub Action workflow ensures deploy to dev environment runs before production
-echo "Build successful. Proceeding with push..."
-echo "GitHub Actions will handle deployment to appropriate environments."
+echo ""
+echo "Deploying to dev environment to verify deployment..."
+# Set flag to indicate we're running in pre-push hook context
+export GH_WORKFLOW_DISPATCH=true
+node scripts/deploy-dev.js --no-interactive
+
+if [ $? -ne 0 ]; then
+  echo "ERROR: Deployment to dev environment failed. Fix deployment issues before pushing."
+  exit 1
+fi
+
+echo "✅ All checks passed! Push can proceed."

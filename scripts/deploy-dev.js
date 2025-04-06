@@ -41,14 +41,23 @@ if (!githubToken) {
     githubToken = execSync('gh auth token', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
     console.log(`${COLORS.green}Successfully obtained token from GitHub CLI${COLORS.reset}`);
   } catch (error) {
-    // Check if we're in a CI environment or pre-push hook where we should bypass token validation
+    // When in pre-push hook context, we still need proper deployment verification
     if (process.env.GH_WORKFLOW_DISPATCH === 'true') {
-      console.log(`${COLORS.green}Running in pre-push hook environment.${COLORS.reset}`);
-      console.log(`${COLORS.green}Build verified. Skipping GitHub Actions workflow dispatch.${COLORS.reset}`);
-      console.log(`${COLORS.green}In a production environment, you would verify the actual deployment.${COLORS.reset}`);
-      console.log(`${COLORS.green}Simulation successful!${COLORS.reset}`);
-      // Exit successfully to allow the push to proceed
-      process.exit(0);
+      console.log(`${COLORS.yellow}Running in pre-push hook environment.${COLORS.reset}`);
+      console.log(`${COLORS.yellow}Deployment verification is required. Attempting to continue...${COLORS.reset}`);
+      
+      // Try alternative token access methods for pre-push context
+      try {
+        githubToken = execSync('git config --get github.token', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+        console.log(`${COLORS.green}Successfully obtained token from git config${COLORS.reset}`);
+      } catch (error) {
+        console.error(`${COLORS.red}Error: Unable to obtain GitHub token.${COLORS.reset}`);
+        console.log('To deploy to dev environment:');
+        console.log('1. Create a personal access token with "workflow" scope at https://github.com/settings/tokens');
+        console.log('2. Export it as GITHUB_TOKEN in your shell: export GITHUB_TOKEN=your_token_here');
+        console.log('   Or save it to git config: git config github.token your_token_here');
+        process.exit(1);
+      }
     } else {
       console.error(`${COLORS.red}Error: Unable to obtain GitHub token.${COLORS.reset}`);
       console.log('To deploy to dev environment:');
