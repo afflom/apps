@@ -1,11 +1,11 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
 echo "Running essential checks for push..."
 npm run typecheck && npm run lint && npm run format:check && npx vitest run src/simple.test.ts src/utils/dom.test.ts
 
 echo ""
-echo "Verifying dev deployment before pushing to remote..."
-
-# Always validate the dev deployment before any push
-echo "Building app for dev environment..."
+echo "Building app for GitHub Pages deployment validation..."
 npm run build
 
 if [ $? -ne 0 ]; then
@@ -13,16 +13,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "Build successful. Attempting to deploy to dev environment..."
-
-# Try the dev deployment script
-export GH_WORKFLOW_DISPATCH=true
-npm run deploy:dev -- --no-interactive
-
-# Check if deployment was successful
-if [ $? -ne 0 ]; then
-  echo "ERROR: Dev deployment failed. Fix deployment issues before pushing."
-  exit 1
-fi
-
-echo "Dev deployment successfully verified. Proceeding with push..."
+# This will be triggered automatically when pushed to GitHub
+# The GitHub Action workflow ensures deploy to dev environment runs before production
+echo "Build successful. Proceeding with push..."
+echo "GitHub Actions will handle deployment to appropriate environments."

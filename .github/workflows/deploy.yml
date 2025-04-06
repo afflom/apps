@@ -1,8 +1,8 @@
 name: Deploy to GitHub Pages
 
 on:
+  # Run on all pushes to any branch
   push:
-    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -25,7 +25,7 @@ permissions:
 
 # Allow only one concurrent deployment per environment
 concurrency:
-  group: "pages-${{ github.workflow }}-${{ github.event.inputs.environment || (github.event_name == 'pull_request' && 'staging') || 'production' }}"
+  group: "pages-${{ github.workflow }}-${{ github.event.inputs.environment || (github.event_name == 'pull_request' && 'staging') || (github.event_name == 'push' && 'dev') || 'production' }}"
   cancel-in-progress: true
 
 jobs:
@@ -107,7 +107,7 @@ jobs:
           path: '_site'
   
   deploy-dev:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev' || github.event_name == 'push' && github.ref != 'refs/heads/main'
     environment:
       name: dev
       url: ${{ steps.deployment.outputs.page_url }}/${{ github.event.repository.name }}/dev
@@ -148,7 +148,7 @@ jobs:
       name: production
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, deploy-dev]
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
