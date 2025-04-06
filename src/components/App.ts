@@ -1,4 +1,4 @@
-import { createElement, appendElement } from '../utils/dom';
+// Component imports
 import { createCounter } from './Counter';
 
 /**
@@ -6,21 +6,24 @@ import { createCounter } from './Counter';
  */
 export class App {
   private container: HTMLElement;
-  
+
   /**
    * Create the app component
    * @param container - Container element or selector
    */
   constructor(container: string | HTMLElement) {
-    this.container = typeof container === 'string'
-      ? document.querySelector(container) as HTMLElement
-      : container;
-      
+    this.container =
+      typeof container === 'string'
+        ? (document.querySelector(container) as HTMLElement)
+        : container;
+
     if (!this.container) {
-      throw new Error(`Container not found: ${container}`);
+      throw new Error(
+        `Container not found: ${container instanceof HTMLElement ? 'HTMLElement' : container}`
+      );
     }
   }
-  
+
   /**
    * Initialize the app
    */
@@ -28,7 +31,7 @@ export class App {
     this.render();
     this.setupCounter();
   }
-  
+
   /**
    * Render main app content
    */
@@ -45,13 +48,12 @@ export class App {
       </div>
     `;
   }
-  
+
   /**
    * Setup counter component
    */
   private setupCounter(): void {
-    const counter = createCounter('#counter');
-    return counter;
+    createCounter('#counter');
   }
 }
 

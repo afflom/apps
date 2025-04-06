@@ -15,41 +15,41 @@ export default defineConfig({
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ]
-      }
-    })
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable',
+          },
+        ],
+      },
+    }),
   ],
   build: {
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: true,
   },
   test: {
     environment: 'jsdom',
     browser: {
       enabled: true,
       name: 'chrome',
-      headless: true
+      headless: true,
     },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       all: true,
       include: ['src/**/*.ts'],
-      exclude: ['**/*.test.ts', '**/*.d.ts']
-    }
+      exclude: ['**/*.test.ts', '**/*.d.ts'],
+    },
   },
-  base: './'
+  base: './',
 });

@@ -6,7 +6,7 @@ import { mathService } from '../services/math';
 export class Counter {
   private element: HTMLButtonElement;
   private counter: number = 0;
-  
+
   /**
    * Create a new counter component
    * @param element - Button element to attach counter to
@@ -16,14 +16,14 @@ export class Counter {
     this.setCounter(0);
     this.bindEvents();
   }
-  
+
   /**
    * Bind event listeners
    */
   private bindEvents(): void {
     this.element.addEventListener('click', () => this.increment());
   }
-  
+
   /**
    * Increment counter using math service
    */
@@ -31,7 +31,7 @@ export class Counter {
     const newValue = mathService.increment(this.counter);
     this.setCounter(newValue);
   }
-  
+
   /**
    * Set counter value and update display
    * @param count - New counter value
@@ -40,14 +40,14 @@ export class Counter {
     this.counter = count;
     this.updateDisplay();
   }
-  
+
   /**
    * Update element display with current counter value
    */
   private updateDisplay(): void {
     this.element.innerHTML = `The counter value is ${this.counter}`;
   }
-  
+
   /**
    * Get current counter value
    * @returns Current counter value
@@ -67,6 +67,6 @@ export function createCounter(selector: string): Counter {
   if (!element) {
     throw new Error(`Element not found: ${selector}`);
   }
-  
+
   return new Counter(element);
 }

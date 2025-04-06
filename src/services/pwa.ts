@@ -18,16 +18,17 @@ export class PWAService {
       }
 
       this.wb = new Workbox('/sw.js');
-      
+
       this.wb.addEventListener('installed', (event) => {
         if (event.isUpdate) {
           this.showUpdatePrompt();
         }
       });
-      
-      this.wb.register()
+
+      this.wb
+        .register()
         .then(() => resolve())
-        .catch(error => reject(error));
+        .catch((error) => reject(error));
     });
   }
 
@@ -45,8 +46,10 @@ export class PWAService {
    * @returns boolean indicating if app is installed
    */
   isInstalled(): boolean {
-    return window.matchMedia('(display-mode: standalone)').matches || 
-           (window.navigator as any).standalone === true;
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true
+    );
   }
 }
 

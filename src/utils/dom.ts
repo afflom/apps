@@ -15,21 +15,21 @@ export function createElement<T extends HTMLElement>(
   children: (HTMLElement | string)[] = []
 ): T {
   const element = document.createElement(tag) as T;
-  
+
   // Set attributes
   Object.entries(attributes).forEach(([key, value]) => {
     element.setAttribute(key, value);
   });
-  
+
   // Add children
-  children.forEach(child => {
+  children.forEach((child) => {
     if (typeof child === 'string') {
       element.appendChild(document.createTextNode(child));
     } else {
       element.appendChild(child);
     }
   });
-  
+
   return element;
 }
 
@@ -39,18 +39,15 @@ export function createElement<T extends HTMLElement>(
  * @param child - Child element to append
  * @returns The appended child element
  */
-export function appendElement<T extends HTMLElement>(
-  parent: string | HTMLElement,
-  child: T
-): T {
-  const parentElement = typeof parent === 'string'
-    ? document.querySelector(parent)
-    : parent;
-    
+export function appendElement<T extends HTMLElement>(parent: string | HTMLElement, child: T): T {
+  const parentElement = typeof parent === 'string' ? document.querySelector(parent) : parent;
+
   if (!parentElement) {
-    throw new Error(`Parent element ${parent} not found`);
+    throw new Error(
+      `Parent element ${typeof parent === 'string' ? parent : 'HTMLElement'} not found`
+    );
   }
-  
+
   parentElement.appendChild(child);
   return child;
 }
@@ -61,13 +58,12 @@ export function appendElement<T extends HTMLElement>(
  * @param createFn - Function to create element if not found
  * @returns Found or created element
  */
-export function getOrCreateElement<T extends HTMLElement>(
-  selector: string,
-  createFn: () => T
-): T {
+export function getOrCreateElement<T extends HTMLElement>(selector: string, createFn: () => T): T {
   const element = document.querySelector(selector) as T;
-  if (element) return element;
-  
+  if (element) {
+    return element;
+  }
+
   const newElement = createFn();
   document.body.appendChild(newElement);
   return newElement;
