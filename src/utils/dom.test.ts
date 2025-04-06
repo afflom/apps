@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createElement, appendElement, getOrCreateElement } from './dom';
 
+// Run a simplified version of the DOM tests to test our testing framework
 describe('DOM Utilities', () => {
   // Clear DOM after each test
   afterEach(() => {

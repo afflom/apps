@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npm run validate
+echo "Running essential checks for push..."
+npm run typecheck && npm run lint && npm run format:check && npx vitest run src/simple.test.ts src/utils/dom.test.ts

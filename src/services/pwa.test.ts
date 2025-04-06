@@ -33,7 +33,7 @@ describe('PWAService', () => {
       configurable: true,
     });
 
-    // Mock the Workbox constructor
+    // Mock the Workbox class
     vi.mock('workbox-window', () => ({
       Workbox: vi.fn().mockImplementation(() => mockWorkbox),
     }));

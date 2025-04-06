@@ -15,18 +15,13 @@ const PrimeMath: IPrimeMath = {
   nextPrime: vi.fn((n) => ({ toString: () => String(n < 2 ? 2 : n + 1) })),
 };
 
-// Mock the math-js library
+// Mock the math-js library once at module scope
 vi.mock('@uor-foundation/math-js', () => ({
   UniversalNumber: {
     fromNumber: vi.fn((n) => ({
       add: vi.fn(() => ({ toString: () => String(n + 1) })),
     })),
     fromString: vi.fn(),
-  },
-  PrimeMath: {
-    gcd: vi.fn((a, b) => ({ toString: () => String(Math.floor(a / b) * b) })),
-    isPrime: vi.fn((n) => (n > 1 && ![2, 3, 5, 7].includes(n) ? false : true)),
-    nextPrime: vi.fn((n) => ({ toString: () => String(n < 2 ? 2 : n + 1) })),
   },
 }));
 
