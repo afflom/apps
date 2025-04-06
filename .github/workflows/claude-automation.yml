@@ -12,6 +12,16 @@ permissions:
   pull-requests: write  # Needed to create pull requests
   issues: write  # Needed to comment on issues
 
+# This is the default implementation method
+# For information on choosing between implementations, see .github/CLAUDE_AUTOMATION.md
+
+# Define global workflow parameters to avoid hardcoding values
+env:
+  NODE_VERSION: "18.x"
+  MIN_ISSUE_LENGTH: 100
+  MAX_RETRIES: 3
+  BASE_RETRY_DELAY: 10  # seconds
+
 jobs:
   check-label:
     name: Check if label is claude
@@ -31,7 +41,7 @@ jobs:
             });
             
             // Check if issue description is too short
-            if (issue.data.body.length < 100) {
+            if (issue.data.body.length < process.env.MIN_ISSUE_LENGTH) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -72,7 +82,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
         
       - name: Install dependencies
@@ -130,23 +140,33 @@ jobs:
           echo "Running Claude to implement the solution..."
           
           # Implement retry logic for Claude API
-          MAX_RETRIES=3
+          MAX_RETRIES=${{ env.MAX_RETRIES }}
           RETRY_COUNT=0
           SUCCESS=false
           
           while [ $RETRY_COUNT -lt $MAX_RETRIES ] && [ "$SUCCESS" = false ]; do
-            # Capture both stdout and stderr
-            if claude -p "$(cat claude-prompt.txt)" > claude-response.md 2>claude-error.log; then
+            # Capture both stdout and stderr, but also show in workflow logs
+            echo "Running Claude with prompt:"
+            cat claude-prompt.txt
+            echo "-----------------------------------"
+            
+            if claude -p "$(cat claude-prompt.txt)" | tee claude-response.md 2> >(tee claude-error.log >&2); then
               SUCCESS=true
               echo "Claude completed implementation successfully"
+              echo "-----------------------------------"
+              echo "Claude response:"
+              cat claude-response.md
             else
               RETRY_COUNT=$((RETRY_COUNT+1))
               ERROR_CODE=$?
               echo "Claude execution failed with exit code $ERROR_CODE (Attempt $RETRY_COUNT of $MAX_RETRIES)"
+              echo "-----------------------------------"
+              echo "Error output:"
+              cat claude-error.log
               
               if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
                 # Wait before retrying (exponential backoff)
-                SLEEP_TIME=$((10 * RETRY_COUNT))
+                SLEEP_TIME=$((${{ env.BASE_RETRY_DELAY }} * RETRY_COUNT))
                 echo "Waiting $SLEEP_TIME seconds before retrying..."
                 sleep $SLEEP_TIME
               else
@@ -170,7 +190,12 @@ jobs:
           RESPONSE_SIZE=$(stat -c%s claude-response.md)
           if [ $RESPONSE_SIZE -lt 100 ]; then
             echo "::warning::Claude response seems too short, might not contain implementation details"
+            echo "Content of response file:"
             cat claude-response.md
+          else
+            echo "Claude response size: $RESPONSE_SIZE bytes, which seems adequate"
+            echo "First 20 lines of response file:"
+            head -n 20 claude-response.md
           fi
       
       - name: Verify changes

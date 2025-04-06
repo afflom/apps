@@ -44,15 +44,33 @@ For this automation to work, the repository needs:
 2. Branch protection rules on the main branch, requiring PR reviews
 3. GitHub Actions enabled for the repository
 
+## Implementation Methods
+
+There are two implementation options available:
+
+### 1. Standard Implementation (Default)
+
+This method runs Claude directly in the GitHub Actions runner environment. It's triggered when an issue is labeled with "claude".
+
+### 2. Docker Implementation (Optional)
+
+This method runs Claude inside a Docker container for more isolation. It's only triggered when an issue has both the "claude" AND "use-docker" labels.
+
+To use the Docker implementation:
+1. Add the "claude" label to the issue
+2. Add the "use-docker" label to the issue
+
 ## Workflow Details
 
-The automation consists of these steps:
+Both implementation methods follow these steps:
 
 1. **Issue Validation**: Checks if the issue has enough detail
 2. **Implementation**: Claude analyzes the issue and implements changes
 3. **Verification**: Changes are validated with typecheck, linting, and tests
 4. **Pull Request**: A PR is created with Claude's changes
 5. **Notification**: The issue is updated with a link to the PR
+
+All Claude output is captured in the GitHub Actions logs for troubleshooting.
 
 ## Limitations
 
