@@ -1,6 +1,8 @@
 # TypeScript PWA Template with GitHub Pages Deployment
 
-A fully-featured TypeScript PWA template that deploys to GitHub Pages using GitHub Actions. This template includes in-browser testing, PWA capabilities, and TypeScript support.
+[![Open in GitHub Codespaces](https://img.shields.io/badge/Open%20in-GitHub%20Codespaces-blue?logo=github)](https://github.com/codespaces/new?hide_repo_select=true&ref=main)
+
+A fully-featured TypeScript PWA template that deploys to GitHub Pages using GitHub Actions. This template includes in-browser testing, PWA capabilities, TypeScript support, and is configured for development with DevContainers and GitHub Codespaces.
 
 ## Features
 
@@ -10,6 +12,8 @@ A fully-featured TypeScript PWA template that deploys to GitHub Pages using GitH
 - 🔄 Automatic GitHub Pages deployment
 - 🎨 Basic styling and counter example
 - 📦 Uses `@uor-foundation/math-js` for demonstration
+- 🐳 DevContainer and GitHub Codespaces ready
+- 🤖 Claude Code integration for AI-assisted development
 
 ## Getting Started
 
@@ -102,6 +106,70 @@ All tests run in a browser environment to ensure accurate DOM testing. The tests
 - App manifest for installability
 - Service worker with automatic updates
 - Icons for various platforms
+
+## Development with DevContainer and GitHub Codespaces
+
+This template is fully configured for development with VS Code DevContainers and GitHub Codespaces.
+
+### GitHub Codespaces
+
+To start developing with GitHub Codespaces:
+
+1. Click the "Code" button on your repository
+2. Select the "Codespaces" tab
+3. Click "Create codespace on main"
+
+The environment will be automatically set up with all dependencies installed and the development server running.
+
+### VS Code DevContainer
+
+To use the DevContainer locally:
+
+1. Install Docker and the VS Code Remote - Containers extension
+2. Open the project in VS Code
+3. Click the notification to reopen in container, or use the Command Palette (F1) to run "Remote-Containers: Reopen in Container"
+
+The DevContainer includes:
+
+- Node.js LTS
+- Chrome for headless browser testing
+- Git and GitHub CLI
+- Common development tools and utilities
+- Pre-configured VS Code settings and extensions
+- Claude Code CLI and VS Code extension
+
+### Features
+
+- Automatic port forwarding for the development server
+- Pre-configured linting and formatting
+- Git authentication and credential helpers
+- Convenient aliases for common commands
+- Isolated, reproducible development environment
+
+### Claude Code Integration
+
+The DevContainer and Codespaces environments include Claude Code for AI-assisted development:
+
+1. **Authentication** (two options):
+   - **Interactive Login**: Simply run `claude` to start the login wizard
+   - **API Key**: Alternatively, create an API key at [Anthropic Console](https://console.anthropic.com/settings/keys)
+     and set it as the `ANTHROPIC_API_KEY` environment variable or Codespaces secret
+
+2. **Using Claude Code**:
+   - In VS Code: Use the Claude Code extension (pre-installed)
+   - In terminal: Use these commands:
+     - `claude` - Run Claude Code CLI
+     - `claude-chat` - Start interactive chat
+     - `claude-init` - Initialize with project context
+     - `claude-on` - Run on specific file or directory
+
+3. **Features**:
+   - In-editor context-aware assistance
+   - Full codebase knowledge for more accurate help
+   - Improved troubleshooting and debugging assistance
+   - Automatic IDE integration
+   
+See `.github/CLAUDE_CODE_GUIDE.md` for detailed usage instructions.
 
 ## License
 
