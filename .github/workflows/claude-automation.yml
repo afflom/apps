@@ -271,24 +271,23 @@ jobs:
                   echo "Preparing to retry with hook feedback..."
                   
                   # Create new prompt with hook feedback for Claude
-                  cat > claude-retry-prompt.txt << EOL
-                  You previously tried to implement a solution for GitHub issue #${{ github.event.issue.number }}, but the pre-commit hook detected issues with your implementation.
-                  
-                  Original prompt:
-                  $CURRENT_PROMPT
-                  
-                  Pre-commit hook feedback:
-                  $HOOK_FEEDBACK
-                  
-                  Please fix these issues and implement a complete solution that will pass the pre-commit checks.
-                  Focus on:
-                  1. Removing placeholder and stub implementations
-                  2. Implementing a proper solution as specified in the issue
-                  3. Following best practices for TypeScript
-                  4. Ensuring code quality and proper testing
-                  
-                  Your implementation will be rejected again if it doesn't address all the issues reported by the pre-commit hook.
-                  EOL
+                  # Write directly to file to avoid heredoc issues with variable content
+                  echo "You previously tried to implement a solution for GitHub issue #${{ github.event.issue.number }}, but the pre-commit hook detected issues with your implementation." > claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Original prompt:" >> claude-retry-prompt.txt
+                  echo "$(cat claude-prompt.txt)" >> claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Pre-commit hook feedback:" >> claude-retry-prompt.txt
+                  echo "$HOOK_FEEDBACK" >> claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Please fix these issues and implement a complete solution that will pass the pre-commit checks." >> claude-retry-prompt.txt
+                  echo "Focus on:" >> claude-retry-prompt.txt
+                  echo "1. Removing placeholder and stub implementations" >> claude-retry-prompt.txt
+                  echo "2. Implementing a proper solution as specified in the issue" >> claude-retry-prompt.txt
+                  echo "3. Following best practices for TypeScript" >> claude-retry-prompt.txt
+                  echo "4. Ensuring code quality and proper testing" >> claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Your implementation will be rejected again if it doesn't address all the issues reported by the pre-commit hook." >> claude-retry-prompt.txt
                   
                   # Run Claude again with the updated prompt
                   echo "-----------------------------------"

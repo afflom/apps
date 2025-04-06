@@ -323,53 +323,50 @@ jobs:
                   echo "Preparing to retry with hook feedback..."
                   
                   # Create new prompt with hook feedback for Claude
-                  cat > claude-retry-prompt.txt << EOL
-                  You previously tried to implement a solution for GitHub issue #${{ github.event.issue.number }}, but the pre-commit hook detected issues with your implementation.
-                  
-                  Original prompt:
-                  $CURRENT_PROMPT
-                  
-                  Pre-commit hook feedback:
-                  $HOOK_FEEDBACK
-                  
-                  Please fix these issues and implement a complete solution that will pass the pre-commit checks.
-                  Focus on:
-                  1. Removing placeholder and stub implementations
-                  2. Implementing a proper solution as specified in the issue
-                  3. Following best practices for TypeScript
-                  4. Ensuring code quality and proper testing
-                  
-                  Your implementation will be rejected again if it doesn't address all the issues reported by the pre-commit hook.
-                  EOL
+                  # Write directly to file to avoid heredoc issues with variable content
+                  echo "You previously tried to implement a solution for GitHub issue #${{ github.event.issue.number }}, but the pre-commit hook detected issues with your implementation." > claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Original prompt:" >> claude-retry-prompt.txt
+                  echo "$(cat claude-prompt.txt)" >> claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Pre-commit hook feedback:" >> claude-retry-prompt.txt
+                  echo "$HOOK_FEEDBACK" >> claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Please fix these issues and implement a complete solution that will pass the pre-commit checks." >> claude-retry-prompt.txt
+                  echo "Focus on:" >> claude-retry-prompt.txt
+                  echo "1. Removing placeholder and stub implementations" >> claude-retry-prompt.txt
+                  echo "2. Implementing a proper solution as specified in the issue" >> claude-retry-prompt.txt
+                  echo "3. Following best practices for TypeScript" >> claude-retry-prompt.txt
+                  echo "4. Ensuring code quality and proper testing" >> claude-retry-prompt.txt
+                  echo "" >> claude-retry-prompt.txt
+                  echo "Your implementation will be rejected again if it doesn't address all the issues reported by the pre-commit hook." >> claude-retry-prompt.txt
                   
                   # Create a Docker script to re-run Claude with feedback
-                  cat > retry-claude.sh << 'EOF'
-                  #!/bin/bash
-                  set -e
-                  
-                  # Load environment variables
-                  source .env-claude
-                  
-                  # Run Claude with retry prompt
-                  echo "-----------------------------------"
-                  echo "Running Claude with updated prompt including hook feedback:"
-                  cat claude-retry-prompt.txt
-                  echo "-----------------------------------"
-                  
-                  # Run Claude and save output
-                  claude -p "$(cat claude-retry-prompt.txt)" > claude-response.md 2> claude-error.log
-                  
-                  # Display the output
-                  echo "-----------------------------------"
-                  echo "Claude retry output:"
-                  cat claude-response.md
-                  
-                  if [ -s claude-error.log ]; then
-                    echo "-----------------------------------"
-                    echo "Claude retry error output:"
-                    cat claude-error.log
-                  fi
-                  EOF
+                  echo '#!/bin/bash' > retry-claude.sh
+                  echo 'set -e' >> retry-claude.sh
+                  echo '' >> retry-claude.sh
+                  echo '# Load environment variables' >> retry-claude.sh
+                  echo 'source .env-claude' >> retry-claude.sh
+                  echo '' >> retry-claude.sh
+                  echo '# Run Claude with retry prompt' >> retry-claude.sh
+                  echo 'echo "-----------------------------------"' >> retry-claude.sh
+                  echo 'echo "Running Claude with updated prompt including hook feedback:"' >> retry-claude.sh
+                  echo 'cat claude-retry-prompt.txt' >> retry-claude.sh
+                  echo 'echo "-----------------------------------"' >> retry-claude.sh
+                  echo '' >> retry-claude.sh
+                  echo '# Run Claude and save output' >> retry-claude.sh
+                  echo 'claude -p "$(cat claude-retry-prompt.txt)" > claude-response.md 2> claude-error.log' >> retry-claude.sh
+                  echo '' >> retry-claude.sh
+                  echo '# Display the output' >> retry-claude.sh
+                  echo 'echo "-----------------------------------"' >> retry-claude.sh
+                  echo 'echo "Claude retry output:"' >> retry-claude.sh
+                  echo 'cat claude-response.md' >> retry-claude.sh
+                  echo '' >> retry-claude.sh
+                  echo 'if [ -s claude-error.log ]; then' >> retry-claude.sh
+                  echo '  echo "-----------------------------------"' >> retry-claude.sh
+                  echo '  echo "Claude retry error output:"' >> retry-claude.sh
+                  echo '  cat claude-error.log' >> retry-claude.sh
+                  echo 'fi' >> retry-claude.sh
                   
                   chmod +x retry-claude.sh
                   
