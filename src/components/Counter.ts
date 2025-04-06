@@ -1,27 +1,87 @@
 import { mathService } from '../services/math';
 
 /**
- * Counter component with increment functionality
+ * Counter Web Component
+ *
+ * A custom element that displays a button with a counter
+ * that increments when clicked.
  */
-export class Counter {
-  private element: HTMLButtonElement;
+export class CounterElement extends HTMLElement {
   private counter: number = 0;
+  private button: HTMLButtonElement;
 
-  /**
-   * Create a new counter component
-   * @param element - Button element to attach counter to
-   */
-  constructor(element: HTMLButtonElement) {
-    this.element = element;
-    this.setCounter(0);
-    this.bindEvents();
+  // Observed attributes for reactive updates
+  static get observedAttributes(): string[] {
+    return ['count', 'label'];
   }
 
-  /**
-   * Bind event listeners
-   */
-  private bindEvents(): void {
-    this.element.addEventListener('click', () => this.increment());
+  constructor() {
+    super();
+
+    // Create shadow DOM for encapsulation
+    const shadow = this.attachShadow({ mode: 'open' });
+
+    // Create styles
+    const style = document.createElement('style');
+    style.textContent = `
+      :host {
+        display: inline-block;
+      }
+      
+      button {
+        padding: 0.6em 1.2em;
+        font-size: 1em;
+        font-weight: 500;
+        font-family: inherit;
+        background-color: #f9f9f9;
+        cursor: pointer;
+        transition: border-color 0.25s;
+        border-radius: 8px;
+        border: 1px solid transparent;
+      }
+      
+      button:hover {
+        border-color: #646cff;
+      }
+      
+      button:focus,
+      button:focus-visible {
+        outline: 4px auto -webkit-focus-ring-color;
+      }
+    `;
+
+    // Create button element
+    this.button = document.createElement('button');
+    this.button.type = 'button';
+    this.button.addEventListener('click', () => this.increment());
+
+    // Add elements to shadow DOM
+    shadow.appendChild(style);
+    shadow.appendChild(this.button);
+
+    // Set initial state
+    this.setCounter(this.getInitialCount());
+    this.updateDisplay();
+  }
+
+  // Lifecycle: when element is added to DOM
+  connectedCallback(): void {
+    this.updateDisplay();
+  }
+
+  // Lifecycle: when attributes change
+  attributeChangedCallback(name: string, oldValue: string, newValue: string): void {
+    if (name === 'count' && oldValue !== newValue) {
+      this.setCounter(parseInt(newValue, 10) || 0);
+    } else if (name === 'label') {
+      this.updateDisplay();
+    }
+  }
+
+  // Get the initial count from attributes or default to 0
+  private getInitialCount(): number {
+    const countAttr = this.getAttribute('count');
+    return countAttr ? parseInt(countAttr, 10) : 0;
   }
 
   /**
@@ -30,6 +90,15 @@ export class Counter {
   increment(): void {
     const newValue = mathService.increment(this.counter);
     this.setCounter(newValue);
+
+    // Dispatch custom event when counter changes
+    this.dispatchEvent(
+      new CustomEvent('counter-changed', {
+        detail: { value: this.counter },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   /**
@@ -38,6 +107,7 @@ export class Counter {
    */
   private setCounter(count: number): void {
     this.counter = count;
+    this.setAttribute('count', String(count));
     this.updateDisplay();
   }
 
@@ -45,7 +115,8 @@ export class Counter {
    * Update element display with current counter value
    */
   private updateDisplay(): void {
-    this.element.innerHTML = `The counter value is ${this.counter}`;
+    const label = this.getAttribute('label') || 'Count';
+    this.button.textContent = `${label}: ${this.counter}`;
   }
 
   /**
@@ -57,16 +128,30 @@ export class Counter {
   }
 }
 
+// Define the custom element
+customElements.define('app-counter', CounterElement);
+
 /**
- * Create a counter attached to an element
- * @param selector - CSS selector for counter element
- * @returns Counter instance
+ * Helper function to add a counter to the page
+ * @param parentSelector - Parent element selector to append counter to
+ * @param initialCount - Initial counter value
+ * @param label - Optional label for the counter
+ * @returns The created counter element
  */
-export function createCounter(selector: string): Counter {
-  const element = document.querySelector<HTMLButtonElement>(selector);
-  if (!element) {
-    throw new Error(`Element not found: ${selector}`);
+export function createCounter(
+  parentSelector: string,
+  initialCount: number = 0,
+  label: string = 'The counter value is'
+): CounterElement {
+  const parent = document.querySelector(parentSelector);
+  if (!parent) {
+    throw new Error(`Parent element not found: ${parentSelector}`);
   }
 
-  return new Counter(element);
+  const counter = document.createElement('app-counter') as CounterElement;
+  counter.setAttribute('count', String(initialCount));
+  counter.setAttribute('label', label);
+
+  parent.appendChild(counter);
+  return counter;
 }

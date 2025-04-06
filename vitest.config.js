@@ -5,13 +5,12 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    browser: {
-      enabled: false // Run in node environment for simplicity during setup
-    },
+    // Running in JSDOM for simplicity, with custom element support
+    setupFiles: ['./src/test-setup.js'],
     deps: {
       optimizer: {
         web: {
-          include: ['@uor-foundation/math-js'] // Include dependencies for easier mocking
+          include: ['@uor-foundation/math-js']
         }
       }
     },
