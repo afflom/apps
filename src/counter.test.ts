@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { UniversalNumber } from '@uor-foundation/math-js';
 
 // A simple test utility to create button element
 function createButtonElement(): HTMLButtonElement {
@@ -20,9 +19,8 @@ function setupCounter(element: HTMLButtonElement): {
     element.innerHTML = `The counter value is ${counter}`;
   };
   element.addEventListener('click', () => {
-    // Using math-js as demonstration
-    const num = UniversalNumber.fromNumber(counter + 1);
-    setCounter(Number(num.toString()));
+    // Simple increment
+    setCounter(counter + 1);
   });
   setCounter(0);
 
@@ -61,13 +59,13 @@ describe('Counter Component', () => {
     expect(counterControls.getCount()).toBe(2);
   });
 
-  it('should use UniversalNumber from math-js for calculations', () => {
-    // This test validates that we're using math-js for calculations
-    const testNum = UniversalNumber.fromNumber(5);
-    expect(testNum.toString()).toBe('5');
-
-    // Increment and verify value
-    counterControls.increment();
-    expect(counterControls.getCount()).toBe(1);
+  it('should handle multiple increments correctly', () => {
+    // Increment multiple times
+    for (let i = 0; i < 5; i++) {
+      counterControls.increment();
+    }
+    
+    expect(buttonElement.innerHTML).toContain('The counter value is 5');
+    expect(counterControls.getCount()).toBe(5);
   });
 });

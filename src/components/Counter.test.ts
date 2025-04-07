@@ -1,13 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { CounterElement, createCounter } from './Counter';
-import { mathService } from '../services/math';
-
-// Mock the math service
-vi.mock('../services/math', () => ({
-  mathService: {
-    increment: vi.fn((n) => n + 1),
-  },
-}));
 
 // Mock web component for tests to prevent errors with custom elements
 const mockCustomElements = (): void => {
@@ -93,7 +85,7 @@ describe('Counter Web Component', () => {
       // Mock the increment method and internal value
       let counterValue = 0;
       const incrementSpy = vi.fn(() => {
-        counterValue = mathService.increment(counterValue);
+        counterValue += 1;
       });
 
       Object.defineProperty(counter, 'increment', {
@@ -109,8 +101,7 @@ describe('Counter Web Component', () => {
       // Simulate clicking by calling the increment method directly
       incrementSpy();
 
-      // Verify the math service was called and counter value increased
-      expect(mathService.increment).toHaveBeenCalledWith(0);
+      // Verify counter value increased
       expect(counterValue).toBe(1);
     });
 

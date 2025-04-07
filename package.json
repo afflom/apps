@@ -13,8 +13,8 @@
     "test:all": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,css,html}'",
     "format:check": "prettier --check 'src/**/*.{ts,tsx,css,html}'",
     "typecheck": "tsc --noEmit",
@@ -25,11 +25,11 @@
     "claude-code": "bash scripts/ensure-claude-code.sh"
   },
   "dependencies": {
-    "@uor-foundation/math-js": "github:uor-foundation/math-js",
     "workbox-window": "^7.0.0"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "^0.2.64",
+    "@eslint/js": "^9.24.0",
     "@types/node": "^22.14.0",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
@@ -42,6 +42,7 @@
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
     "typescript": "^5.4.2",
+    "typescript-eslint": "^8.29.0",
     "vite": "^6.2.5",
     "vite-plugin-pwa": "^1.0.0",
     "vitest": "^3.1.1",

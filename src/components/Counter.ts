@@ -1,5 +1,3 @@
-import { mathService } from '../services/math';
-
 /**
  * Counter Web Component
  *
@@ -85,10 +83,10 @@ export class CounterElement extends HTMLElement {
   }
 
   /**
-   * Increment counter using math service
+   * Increment counter
    */
   increment(): void {
-    const newValue = mathService.increment(this.counter);
+    const newValue = this.counter + 1;
     this.setCounter(newValue);
 
     // Dispatch custom event when counter changes
