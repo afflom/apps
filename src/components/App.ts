@@ -56,8 +56,12 @@ export class AppElement extends HTMLElement {
   // Lifecycle: when element is added to DOM
   connectedCallback(): void {
     // Ensure component is fully rendered
-    if (!this.shadowRoot?.querySelector('app-counter')) {
-      this.render();
+    if (this.shadowRoot) {
+      // Use a type assertion to handle the TypeScript error
+      const shadow = this.shadowRoot as ShadowRoot;
+      if (!shadow.querySelector('app-counter')) {
+        this.render();
+      }
     }
   }
 
@@ -67,9 +71,13 @@ export class AppElement extends HTMLElement {
       this._title = newValue || 'TypeScript PWA Template';
 
       // Update title if already rendered
-      const titleElement = this.shadowRoot?.querySelector('h1');
-      if (titleElement) {
-        titleElement.textContent = this._title;
+      if (this.shadowRoot) {
+        // Use a type assertion to handle the TypeScript error
+        const shadow = this.shadowRoot as ShadowRoot;
+        const titleElement = shadow.querySelector('h1');
+        if (titleElement) {
+          titleElement.textContent = this._title;
+        }
       }
     }
   }
@@ -104,10 +112,17 @@ export class AppElement extends HTMLElement {
 
     // Add to shadow root (clear existing content first)
     const shadowRoot = this.shadowRoot;
-    if (shadowRoot && shadowRoot.childElementCount > 1 && shadowRoot.lastChild) {
-      shadowRoot.removeChild(shadowRoot.lastChild);
-    }
     if (shadowRoot) {
+      // Remove the last child if it exists to avoid duplicating content
+      if (
+        shadowRoot.childElementCount &&
+        shadowRoot.childElementCount > 1 &&
+        shadowRoot.lastChild
+      ) {
+        shadowRoot.removeChild(shadowRoot.lastChild);
+      }
+
+      // Append the new container
       shadowRoot.appendChild(container);
     }
   }

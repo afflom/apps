@@ -124,7 +124,7 @@ export const warn = (message: string, ...optionalParams: unknown[]): void => {
 export const error = (message: string, err?: Error): void => {
   if (shouldLog('error')) {
     if (err) {
-      logToConsole('error', message, [err]);
+      logToConsole('error', message, err instanceof Error ? [err] : [err]);
     } else {
       logToConsole('error', message);
     }

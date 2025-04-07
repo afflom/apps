@@ -37,13 +37,13 @@ export default tseslint.config(
       '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/restrict-template-expressions': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      'curly': ['error', 'all'],
-      'eqeqeq': ['error', 'always'],
+      curly: ['error', 'all'],
+      eqeqeq: ['error', 'always'],
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
       'prefer-const': 'error',
       'no-var': 'error',
       'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 1 }],
-      'semi': ['error', 'always'],
+      semi: ['error', 'always'],
     },
   },
   {
@@ -74,6 +74,33 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         project: ['./tsconfig.node.json'],
+      },
+    },
+  },
+  {
+    files: ['scripts/deploy-dev.js'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  {
+    files: ['src/test-setup.js'],
+    languageOptions: {
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        Element: 'readonly',
+        HTMLElement: 'readonly',
+        customElements: 'readonly',
+        global: 'readonly',
+        MockShadowRoot: 'readonly',
       },
     },
   },

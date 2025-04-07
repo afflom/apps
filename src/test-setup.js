@@ -1,6 +1,6 @@
 /**
  * Test setup file for Vitest
- * 
+ *
  * This file provides polyfills and setup for testing web components with JSDOM
  */
 
@@ -13,8 +13,8 @@ if (!window.customElements) {
   };
 }
 
-// Polyfill for Shadow DOM
-class MockShadowRoot {
+// Simple Shadow DOM mock for testing
+global.MockShadowRoot = class MockShadowRoot {
   constructor() {
     this.childNodes = [];
     this.children = [];
@@ -22,25 +22,39 @@ class MockShadowRoot {
 
   appendChild(node) {
     this.childNodes.push(node);
-    if (node.nodeType === 1) { // ELEMENT_NODE
+    if (node.nodeType === 1) {
+      // ELEMENT_NODE
       this.children.push(node);
     }
     return node;
   }
 
-  querySelector(selector) {
-    // Basic implementation of querySelector to find nodes in shadow DOM
-    for (const child of this.children) {
-      if (child.matches && child.matches(selector)) {
+  getElementById(id) {
+    for (const child of this.childNodes) {
+      if (child.id === id) {
         return child;
       }
-      
-      // Recursively check children
-      if (child.children && child.children.length) {
-        for (const grandchild of child.children) {
-          if (grandchild.matches && grandchild.matches(selector)) {
-            return grandchild;
-          }
+    }
+    return null;
+  }
+
+  querySelector(selector) {
+    // Simplified implementation
+    if (selector.startsWith('#')) {
+      const id = selector.substring(1);
+      return this.getElementById(id);
+    } else if (selector.startsWith('.')) {
+      const className = selector.substring(1);
+      for (const child of this.childNodes) {
+        if (child.className && child.className.includes(className)) {
+          return child;
+        }
+      }
+    } else {
+      // Assume tag selector
+      for (const child of this.childNodes) {
+        if (child.tagName && child.tagName.toLowerCase() === selector.toLowerCase()) {
+          return child;
         }
       }
     }
@@ -49,18 +63,22 @@ class MockShadowRoot {
 
   querySelectorAll(selector) {
     const results = [];
-    // Basic implementation for tests
-    for (const child of this.children) {
-      if (child.matches && child.matches(selector)) {
-        results.push(child);
+    // Simplified implementation
+    if (selector.startsWith('#')) {
+      const element = this.getElementById(selector.substring(1));
+      if (element) results.push(element);
+    } else if (selector.startsWith('.')) {
+      const className = selector.substring(1);
+      for (const child of this.childNodes) {
+        if (child.className && child.className.includes(className)) {
+          results.push(child);
+        }
       }
-      
-      // Recursively check children
-      if (child.children && child.children.length) {
-        for (const grandchild of child.children) {
-          if (grandchild.matches && grandchild.matches(selector)) {
-            results.push(grandchild);
-          }
+    } else {
+      // Assume tag selector
+      for (const child of this.childNodes) {
+        if (child.tagName && child.tagName.toLowerCase() === selector.toLowerCase()) {
+          results.push(child);
         }
       }
     }
@@ -69,20 +87,22 @@ class MockShadowRoot {
 
   // Add any other methods needed by tests
   get textContent() {
-    return this.childNodes.map(node => {
-      if (typeof node.textContent === 'string') {
-        return node.textContent;
-      } else if (node.nodeValue) {
-        return node.nodeValue;
-      }
-      return '';
-    }).join('');
+    return this.childNodes
+      .map((node) => {
+        if (typeof node.textContent === 'string') {
+          return node.textContent;
+        } else if (node.nodeValue) {
+          return node.nodeValue;
+        }
+        return '';
+      })
+      .join('');
   }
-}
+};
 
 // Add attachShadow method to Element prototype if not present
 if (!Element.prototype.attachShadow) {
-  Element.prototype.attachShadow = function() {
+  Element.prototype.attachShadow = function () {
     this.shadowRoot = new MockShadowRoot();
     return this.shadowRoot;
   };
@@ -90,11 +110,24 @@ if (!Element.prototype.attachShadow) {
 
 // Make sure document.createElement can handle custom elements
 const originalCreateElement = document.createElement;
-document.createElement = function(tagName, options) {
+document.createElement = function (tagName, options) {
   if (tagName.includes('-')) {
     // It's a custom element
     const element = originalCreateElement.call(document, 'div', options);
-    element.tagName = tagName.toUpperCase();
+    // Don't try to set tagName property as it's read-only
+    // Instead, add a fake tagName getter for test purposes
+    Object.defineProperty(element, '_customTagName', {
+      value: tagName.toUpperCase(),
+      writable: false,
+    });
+    // Override element.matches for our custom elements
+    const originalMatches = element.matches;
+    element.matches = function (selector) {
+      if (selector.toLowerCase() === tagName.toLowerCase()) {
+        return true;
+      }
+      return originalMatches.call(this, selector);
+    };
     return element;
   }
   return originalCreateElement.call(document, tagName, options);
@@ -104,13 +137,13 @@ document.createElement = function(tagName, options) {
 window.__WEB_COMPONENTS_REGISTRY = new Map();
 
 // For tests, register custom elements globally
-global.registerCustomElement = function(name, elementClass) {
+global.registerCustomElement = function (name, elementClass) {
   window.__WEB_COMPONENTS_REGISTRY.set(name, elementClass);
   customElements.define(name, elementClass);
 };
 
 // Export a helper to create instances of custom elements for testing
-global.createCustomElement = function(name, props = {}) {
+global.createCustomElement = function (name, props = {}) {
   const element = document.createElement(name);
   Object.entries(props).forEach(([key, value]) => {
     element[key] = value;
@@ -119,30 +152,30 @@ global.createCustomElement = function(name, props = {}) {
 };
 
 // Add mockWebComponent helper for tests
-global.mockWebComponent = function(name) {
+global.mockWebComponent = function (name) {
   class MockComponent extends HTMLElement {
     constructor() {
       super();
       this.shadowRoot = new MockShadowRoot();
       this.attributes = new Map();
     }
-    
+
     getAttribute(name) {
       return this.attributes.get(name) || null;
     }
-    
+
     setAttribute(name, value) {
       this.attributes.set(name, value);
       if (this.attributeChangedCallback) {
         this.attributeChangedCallback(name, this.getAttribute(name), value);
       }
     }
-    
+
     connectedCallback() {}
     disconnectedCallback() {}
     attributeChangedCallback() {}
   }
-  
+
   customElements.define(name, MockComponent);
   return MockComponent;
 };

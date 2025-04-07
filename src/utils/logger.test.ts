@@ -122,8 +122,7 @@ describe('logger', () => {
       configure({ level: 'error', enableTimestamp: false });
       const testError = new Error('Test error');
       error('Error occurred', testError);
-      expect(mockConsole.error).toHaveBeenCalledWith('Error occurred');
-      expect(mockConsole.error).toHaveBeenCalledWith([testError]);
+      expect(mockConsole.error).toHaveBeenCalledWith('Error occurred', testError);
     });
   });
 

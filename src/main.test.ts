@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { pwaService } from './services/pwa';
 import { createApp } from './components/App';
 
-// Mock dependencies
+// Mock dependencies - must be before importing the module
 vi.mock('./services/pwa', () => ({
   pwaService: {
-    register: vi.fn().mockResolvedValue(undefined),
+    register: vi.fn(() => Promise.resolve()),
   },
 }));
+
+// Import after mocking
+import { pwaService } from './services/pwa';
 
 vi.mock('./components/App', () => ({
   createApp: vi.fn(),
@@ -49,9 +51,11 @@ describe('Main application entry', () => {
   });
 
   it('should handle PWA registration errors gracefully', async () => {
+    // Clear module cache to re-import
+    vi.resetModules();
+
     // Mock console.warn
-    const originalWarn = console.warn;
-    console.warn = vi.fn();
+    const warnMock = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     // Make registration fail
     (pwaService.register as any).mockRejectedValueOnce(new Error('Test error'));
@@ -59,28 +63,37 @@ describe('Main application entry', () => {
     // Import the module to trigger the code
     await import('./main');
 
-    // Should have logged warning
-    expect(console.warn).toHaveBeenCalledWith('PWA initialization failed:', expect.any(Error));
+    // Wait for promise rejection to be processed
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    // Restore console.warn
-    console.warn = originalWarn;
+    // Should have logged warning
+    expect(warnMock).toHaveBeenCalledWith('PWA initialization failed:', expect.any(Error));
+
+    // Clean up
+    warnMock.mockRestore();
   });
 
   it('should initialize app on DOMContentLoaded', async () => {
+    // Clear module cache to re-import
+    vi.resetModules();
+
+    // Spy on document.addEventListener
+    const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
+
     // Import the module to trigger the code
     await import('./main');
 
     // Verify event listener was added
-    expect(document.addEventListener).toHaveBeenCalledWith(
-      'DOMContentLoaded',
-      expect.any(Function)
-    );
+    expect(addEventListenerSpy).toHaveBeenCalledWith('DOMContentLoaded', expect.any(Function));
 
     // Get the listener and call it
-    const listener = eventListeners['DOMContentLoaded'][0];
-    (listener as EventListener)({} as Event);
+    const listener = addEventListenerSpy.mock.calls[0][1] as EventListener;
+    listener({} as Event);
 
     // App should be created
     expect(createApp).toHaveBeenCalledWith('#app');
+
+    // Clean up
+    addEventListenerSpy.mockRestore();
   });
 });

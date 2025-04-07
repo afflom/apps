@@ -1,14 +1,29 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { PWAService } from './pwa';
 
+// Create a mock for workbox-window
+const mockWorkbox = {
+  addEventListener: vi.fn(),
+  register: vi.fn(() => Promise.resolve()),
+};
+
+// Mock workbox-window module before importing PWAService
+vi.mock('workbox-window', () => ({
+  Workbox: function () {
+    return mockWorkbox;
+  },
+}));
+
 describe('PWAService', () => {
   let pwaService: PWAService;
-  let mockWorkbox: any;
   let originalNavigator: any;
   let mockConfirm: any;
   let mockLocation: any;
 
   beforeEach(() => {
+    // Reset mocks
+    vi.clearAllMocks();
+
     // Store original navigator and location
     originalNavigator = global.navigator;
     mockLocation = { reload: vi.fn() };
@@ -18,12 +33,6 @@ describe('PWAService', () => {
     global.confirm = mockConfirm;
     global.window.location = mockLocation as any;
 
-    // Mock Workbox
-    mockWorkbox = {
-      addEventListener: vi.fn(),
-      register: vi.fn().mockResolvedValue(undefined),
-    };
-
     // Create service instance
     pwaService = new PWAService();
 
@@ -32,11 +41,6 @@ describe('PWAService', () => {
       value: {},
       configurable: true,
     });
-
-    // Mock the Workbox class
-    vi.mock('workbox-window', () => ({
-      Workbox: vi.fn().mockImplementation(() => mockWorkbox),
-    }));
   });
 
   afterEach(() => {

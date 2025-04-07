@@ -1,5 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'url';
 import path from 'path';
+
+// Get the directory name in ESM
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
@@ -10,16 +14,16 @@ export default defineConfig({
     deps: {
       optimizer: {
         web: {
-          include: ['@uor-foundation/math-js']
-        }
-      }
+          include: ['@uor-foundation/math-js'],
+        },
+      },
     },
     testTimeout: 10000,
-    hookTimeout: 10000
+    hookTimeout: 10000,
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      '@': path.resolve(__dirname, './src'),
+    },
   },
 });

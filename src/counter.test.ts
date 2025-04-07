@@ -64,7 +64,7 @@ describe('Counter Component', () => {
     for (let i = 0; i < 5; i++) {
       counterControls.increment();
     }
-    
+
     expect(buttonElement.innerHTML).toContain('The counter value is 5');
     expect(counterControls.getCount()).toBe(5);
   });
