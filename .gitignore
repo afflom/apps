@@ -25,3 +25,4 @@ dist-ssr
 *.sw?
 page-load-state.png
 public/sw.js
+*-error-*.png
