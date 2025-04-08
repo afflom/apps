@@ -1,6 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createApp } from './components/App';
 
+// Mock the logger module before importing the main module
+vi.mock('./utils/logger', () => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  configure: vi.fn(),
+  resetConfig: vi.fn(),
+  getConfig: vi.fn(),
+  disableLogging: vi.fn(),
+  default: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    configure: vi.fn(),
+    resetConfig: vi.fn(),
+    getConfig: vi.fn(),
+    disableLogging: vi.fn(),
+  },
+}));
+
 // Mock dependencies - must be before importing the module
 vi.mock('./services/pwa', () => ({
   pwaService: {
@@ -21,12 +43,15 @@ vi.mock('./components/Counter', () => ({
   createCounter: vi.fn(),
 }));
 
+// Mock App component
+vi.mock('./components/App', () => ({
+  createApp: vi.fn().mockReturnValue({ setAttribute: vi.fn() }),
+}));
+
 // Import after mocking
 import { pwaService } from './services/pwa';
-
-vi.mock('./components/App', () => ({
-  createApp: vi.fn(),
-}));
+import { AppInitializer } from './main';
+import * as logger from './utils/logger';
 
 describe('Main application entry', () => {
   let originalAddEventListener: typeof document.addEventListener;
@@ -40,7 +65,7 @@ describe('Main application entry', () => {
 
     // Mock addEventListener
     eventListeners = {};
-    document.addEventListener = vi.fn((event, listener) => {
+    document.addEventListener = vi.fn((event, listener, _options) => {
       if (!eventListeners[event]) {
         eventListeners[event] = [];
       }
@@ -57,56 +82,52 @@ describe('Main application entry', () => {
   });
 
   it('should register PWA service', async () => {
-    // Import the module to trigger the code
-    await import('./main');
+    // Create test div for app
+    document.body.innerHTML = '<div id="app"></div>';
 
+    // Create an instance of AppInitializer
+    const appInit = new AppInitializer();
+    await appInit.initialize();
+
+    // Should have tried to register PWA
     expect(pwaService.register).toHaveBeenCalled();
   });
 
   it('should handle PWA registration errors gracefully', async () => {
-    // Clear module cache to re-import
-    vi.resetModules();
+    // Create test div for app
+    document.body.innerHTML = '<div id="app"></div>';
 
-    // Mock console.warn
-    const warnMock = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const testError = new Error('Test error');
 
     // Make registration fail
-    (pwaService.register as any).mockRejectedValueOnce(new Error('Test error'));
+    (pwaService.register as any).mockRejectedValueOnce(testError);
 
-    // Import the module to trigger the code
-    await import('./main');
-
-    // Wait for promise rejection to be processed
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    // Create an instance and initialize
+    const appInit = new AppInitializer();
+    await appInit.initialize();
 
     // Should have logged warning
-    expect(warnMock).toHaveBeenCalledWith('PWA initialization failed:', expect.any(Error));
+    expect(logger.warn).toHaveBeenCalled();
 
-    // Clean up
-    warnMock.mockRestore();
+    // App should still be created despite PWA error
+    expect(createApp).toHaveBeenCalledWith('#app');
   });
 
-  it('should initialize app on DOMContentLoaded', async () => {
-    // Clear module cache to re-import
-    vi.resetModules();
+  it('should initialize app components', async () => {
+    // Create test div for app
+    document.body.innerHTML = '<div id="app"></div>';
 
-    // Spy on document.addEventListener
-    const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
+    // Mock document.readyState
+    Object.defineProperty(document, 'readyState', {
+      configurable: true,
+      get: () => 'complete',
+    });
 
-    // Import the module to trigger the code
-    await import('./main');
-
-    // Verify event listener was added
-    expect(addEventListenerSpy).toHaveBeenCalledWith('DOMContentLoaded', expect.any(Function));
-
-    // Get the listener and call it
-    const listener = addEventListenerSpy.mock.calls[0][1] as EventListener;
-    listener({} as Event);
+    // Create an instance and initialize
+    const appInit = new AppInitializer();
+    await appInit.initialize();
 
     // App should be created
     expect(createApp).toHaveBeenCalledWith('#app');
-
-    // Clean up
-    addEventListenerSpy.mockRestore();
   });
 });

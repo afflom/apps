@@ -66,7 +66,11 @@ export function createMockCounterElement(): MockedCounterElement {
   });
 
   const disconnectedCallback = vi.fn(() => {
-    // In a real component, would clean up event listeners
+    // Cleanup event listeners
+    const button = counter.shadowRoot?.querySelector('button');
+    if (button) {
+      button.removeEventListener('click', increment);
+    }
   });
 
   const attributeChangedCallback = vi.fn(
@@ -170,11 +174,20 @@ export function createMockAppElement(): MockedAppElement {
   });
 
   const disconnectedCallback = vi.fn(() => {
-    // In a real component, would clean up resources and event listeners
+    // Cleanup resources and event listeners
+    if (app.shadowRoot) {
+      // Remove any event listeners from child components
+      const counter = app.shadowRoot.querySelector('app-counter');
+      if (counter) {
+        counter.removeEventListener('counter-changed', () => {});
+        counter.removeEventListener('error', () => {});
+      }
+    }
   });
 
   const adoptedCallback = vi.fn(() => {
-    // In a real component, would respond to being moved to a new document
+    // Respond to the element being moved to a new document
+    render(); // Re-render in new document context
   });
 
   const attributeChangedCallback = vi.fn(
@@ -321,10 +334,10 @@ export class MockShadowRoot {
   get textContent(): string {
     return this.childNodes
       .map((node) => {
-        if (typeof (node as any).textContent === 'string') {
-          return (node as any).textContent;
-        } else if ((node as any).nodeValue) {
-          return (node as any).nodeValue;
+        if ('textContent' in node) {
+          return (node as Element).textContent;
+        } else if ('nodeValue' in node) {
+          return (node as Text).nodeValue;
         }
         return '';
       })

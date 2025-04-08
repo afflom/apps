@@ -28,6 +28,7 @@ export interface MockedAppElement extends HTMLElement {
 
 // Declare global extension types
 declare global {
-  // Mock types are part of vitest rather than jest
-  // No need for explicit jest namespace here
+  interface Window {
+    __WEB_COMPONENTS_REGISTRY?: Map<string, CustomElementConstructor>;
+  }
 }

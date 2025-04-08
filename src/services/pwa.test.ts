@@ -38,7 +38,9 @@ describe('PWAService', () => {
 
     // Force serviceWorker to be defined
     Object.defineProperty(global.navigator, 'serviceWorker', {
-      value: {},
+      value: {
+        getRegistration: vi.fn().mockResolvedValue({ scope: '/test/' }),
+      },
       configurable: true,
     });
   });
@@ -60,9 +62,10 @@ describe('PWAService', () => {
       });
     });
 
-    it('should register the service worker when everything is correct', async () => {
+    it('should register the service worker directly', async () => {
       await pwaService.register();
-      expect(global.fetch).toHaveBeenCalled();
+      // Fetch should not be called anymore since we removed the validation
+      expect(global.fetch).not.toHaveBeenCalled();
       expect(mockWorkbox.register).toHaveBeenCalled();
     });
 
@@ -73,43 +76,41 @@ describe('PWAService', () => {
       await expect(pwaService.register()).rejects.toThrow('Service worker not supported');
     });
 
-    it('should reject if service worker file is not found', async () => {
-      // Mock fetch to return not found
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: false,
-        headers: {
-          get: vi.fn(),
-        },
-      });
+    it('should handle service worker registration error', async () => {
+      // Mock register to reject
+      mockWorkbox.register.mockRejectedValueOnce(new Error('Registration failed'));
 
-      await expect(pwaService.register()).rejects.toThrow('Service worker file not found');
+      await expect(pwaService.register()).rejects.toThrow('Registration failed');
     });
 
-    it('should reject if service worker has incorrect MIME type', async () => {
-      // Mock fetch to return incorrect MIME type
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        headers: {
-          get: vi.fn().mockReturnValue('text/html'),
-        },
-      });
-
-      await expect(pwaService.register()).rejects.toThrow('Service worker has incorrect MIME type');
-    });
-
-    it('should set up update listener when service worker is valid', async () => {
+    it('should set up all event listeners when service worker is valid', async () => {
       await pwaService.register();
+
+      // Verify all event listeners are set up
       expect(mockWorkbox.addEventListener).toHaveBeenCalledWith('installed', expect.any(Function));
+      expect(mockWorkbox.addEventListener).toHaveBeenCalledWith(
+        'controlling',
+        expect.any(Function)
+      );
+      expect(mockWorkbox.addEventListener).toHaveBeenCalledWith('activated', expect.any(Function));
+      expect(mockWorkbox.addEventListener).toHaveBeenCalledWith('waiting', expect.any(Function));
+      expect(mockWorkbox.addEventListener).toHaveBeenCalledWith('error', expect.any(Function));
     });
 
     it('should handle update event and reload on confirmation', async () => {
       await pwaService.register();
 
-      // Get the event handler that was registered
-      const handler = mockWorkbox.addEventListener.mock.calls[0][1];
+      // Find the installed event handler
+      const installedHandlerCall = mockWorkbox.addEventListener.mock.calls.find(
+        (call) => call[0] === 'installed'
+      );
+      const installedHandler = installedHandlerCall ? installedHandlerCall[1] : undefined;
+      expect(installedHandler).toBeDefined();
 
       // Call the handler with an update event
-      handler({ isUpdate: true });
+      if (installedHandler) {
+        installedHandler({ isUpdate: true });
+      }
 
       expect(mockConfirm).toHaveBeenCalledWith('New app update is available! Click OK to refresh.');
       expect(mockLocation.reload).toHaveBeenCalled();
@@ -121,9 +122,17 @@ describe('PWAService', () => {
 
       await pwaService.register();
 
-      // Get and call the event handler
-      const handler = mockWorkbox.addEventListener.mock.calls[0][1];
-      handler({ isUpdate: true });
+      // Find the installed event handler
+      const installedHandlerCall = mockWorkbox.addEventListener.mock.calls.find(
+        (call) => call[0] === 'installed'
+      );
+      const installedHandler = installedHandlerCall ? installedHandlerCall[1] : undefined;
+      expect(installedHandler).toBeDefined();
+
+      // Call the handler with an update event
+      if (installedHandler) {
+        installedHandler({ isUpdate: true });
+      }
 
       expect(mockConfirm).toHaveBeenCalled();
       expect(mockLocation.reload).not.toHaveBeenCalled();
@@ -156,6 +165,53 @@ describe('PWAService', () => {
       (global.navigator as any).standalone = false;
 
       expect(pwaService.isInstalled()).toBe(false);
+    });
+
+    it('should handle errors and return false', () => {
+      // Mock matchMedia to throw an error
+      global.window.matchMedia = vi.fn().mockImplementation(() => {
+        throw new Error('matchMedia error');
+      });
+
+      expect(pwaService.isInstalled()).toBe(false);
+    });
+  });
+
+  describe('isRegistered', () => {
+    it('should return true when service worker is registered', async () => {
+      // Mock getRegistration to return a registration
+      (global.navigator.serviceWorker.getRegistration as any).mockResolvedValueOnce({
+        scope: '/test/',
+      });
+
+      const isRegistered = await pwaService.isRegistered();
+      expect(isRegistered).toBe(true);
+    });
+
+    it('should return false when no service worker is registered', async () => {
+      // Mock getRegistration to return null
+      (global.navigator.serviceWorker.getRegistration as any).mockResolvedValueOnce(null);
+
+      const isRegistered = await pwaService.isRegistered();
+      expect(isRegistered).toBe(false);
+    });
+
+    it('should return false when serviceWorker is not supported', async () => {
+      // Remove serviceWorker from navigator
+      delete (global.navigator as any).serviceWorker;
+
+      const isRegistered = await pwaService.isRegistered();
+      expect(isRegistered).toBe(false);
+    });
+
+    it('should handle errors and return false', async () => {
+      // Mock getRegistration to throw an error
+      (global.navigator.serviceWorker.getRegistration as any).mockRejectedValueOnce(
+        new Error('Registration error')
+      );
+
+      const isRegistered = await pwaService.isRegistered();
+      expect(isRegistered).toBe(false);
     });
   });
 });

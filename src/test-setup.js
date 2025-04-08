@@ -111,25 +111,67 @@ if (!Element.prototype.attachShadow) {
 // Make sure document.createElement can handle custom elements
 const originalCreateElement = document.createElement;
 document.createElement = function (tagName, options) {
-  if (tagName.includes('-')) {
+  // Check if it's a custom element (contains a hyphen)
+  if (typeof tagName === 'string' && tagName.includes('-')) {
     // It's a custom element
-    const element = originalCreateElement.call(document, 'div', options);
-    // Don't try to set tagName property as it's read-only
-    // Instead, add a fake tagName getter for test purposes
-    Object.defineProperty(element, '_customTagName', {
-      value: tagName.toUpperCase(),
-      writable: false,
-    });
-    // Override element.matches for our custom elements
-    const originalMatches = element.matches;
-    element.matches = function (selector) {
-      if (selector.toLowerCase() === tagName.toLowerCase()) {
-        return true;
+    try {
+      // First try the original createElement - some environments support custom elements
+      const element = originalCreateElement.call(document, tagName, options);
+      
+      // If we're in a test environment without native custom element support,
+      // we need to enhance the element to behave like a custom element
+      if (!element.attachShadow) {
+        element.attachShadow = function(options) {
+          const shadowRoot = new MockShadowRoot();
+          Object.defineProperty(this, 'shadowRoot', {
+            value: shadowRoot,
+            writable: false,
+            configurable: true,
+          });
+          return shadowRoot;
+        };
       }
-      return originalMatches.call(this, selector);
-    };
-    return element;
+      
+      // Add other custom element features if needed
+      return element;
+    } catch (e) {
+      // If creation fails (most likely in JSDOM without custom elements support)
+      // Fall back to creating a div and adding custom element properties
+      console.warn(`Creating fallback for custom element: ${tagName}`, e);
+      const element = originalCreateElement.call(document, 'div', options);
+      
+      // Set a custom tagName property
+      Object.defineProperty(element, 'tagName', {
+        get: function() {
+          return tagName.toUpperCase();
+        },
+      });
+      
+      // Add ability to attach shadow root
+      element.attachShadow = function(options) {
+        const shadowRoot = new MockShadowRoot();
+        Object.defineProperty(this, 'shadowRoot', {
+          value: shadowRoot,
+          writable: false,
+          configurable: true,
+        });
+        return shadowRoot;
+      };
+      
+      // Override element.matches for our custom elements
+      const originalMatches = element.matches;
+      element.matches = function (selector) {
+        if (selector.toLowerCase() === tagName.toLowerCase()) {
+          return true;
+        }
+        return originalMatches.call(this, selector);
+      };
+      
+      return element;
+    }
   }
+  
+  // For normal elements, use the original createElement
   return originalCreateElement.call(document, tagName, options);
 };
 
@@ -139,7 +181,13 @@ window.__WEB_COMPONENTS_REGISTRY = new Map();
 // For tests, register custom elements globally
 global.registerCustomElement = function (name, elementClass) {
   window.__WEB_COMPONENTS_REGISTRY.set(name, elementClass);
-  customElements.define(name, elementClass);
+  try {
+    // Already defined? Skip
+    if (customElements.get(name)) return;
+    customElements.define(name, elementClass);
+  } catch (e) {
+    console.warn(`Error registering custom element ${name}:`, e);
+  }
 };
 
 // Export a helper to create instances of custom elements for testing
@@ -173,12 +221,21 @@ global.mockWebComponent = function (name) {
 
     connectedCallback() {}
     disconnectedCallback() {}
+    adoptedCallback() {}
     attributeChangedCallback() {}
   }
 
-  customElements.define(name, MockComponent);
+  try {
+    if (!customElements.get(name)) {
+      customElements.define(name, MockComponent);
+    }
+  } catch (e) {
+    console.warn(`Error registering mock component ${name}:`, e);
+  }
+  
   return MockComponent;
 };
 
-// Vitest-specific setup if needed
-// (This might be expanded based on your specific test needs)
+// Register our main components for tests
+mockWebComponent('app-root');
+mockWebComponent('app-counter');

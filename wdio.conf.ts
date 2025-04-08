@@ -22,7 +22,7 @@ export const config: Options.Testrunner = {
   ],
   logLevel: 'info',
   bail: 0,
-  baseUrl: 'http://localhost:4177',
+  baseUrl: `http://localhost:${process.env.TEST_PORT || 4173}`,
   waitforTimeout: 10000,
   connectionRetryTimeout: 120000,
   connectionRetryCount: 3,

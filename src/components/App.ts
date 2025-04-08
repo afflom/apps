@@ -1,11 +1,13 @@
 // Import the Counter web component
 import './Counter';
+import * as logger from '../utils/logger';
 
 /**
  * App Web Component - Main application container
  */
 export class AppElement extends HTMLElement {
-  private _title: string; // Use _ to avoid conflicts with HTMLElement properties
+  private _title: string = 'TypeScript PWA Template'; // Use _ to avoid conflicts with HTMLElement properties
+  private initialized = false;
 
   // Observed attributes
   static get observedAttributes(): string[] {
@@ -15,144 +17,173 @@ export class AppElement extends HTMLElement {
   constructor() {
     super();
 
-    // Create shadow DOM for encapsulation
-    const shadow = this.attachShadow({ mode: 'open' });
+    try {
+      // Create shadow DOM for encapsulation
+      const shadow = this.attachShadow({ mode: 'open' });
 
-    // Get the title from attribute or use default
-    this._title = this.getAttribute('title') || 'TypeScript PWA Template';
+      // Get the title from attribute or use default
+      this._title = this.getAttribute('title') || 'TypeScript PWA Template';
 
-    // Create styles
-    const style = document.createElement('style');
-    style.textContent = `
-      :host {
-        display: block;
-        font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-        line-height: 1.5;
-        font-weight: 400;
-        color: rgba(255, 255, 255, 0.87);
-        background-color: #242424;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 2rem;
-      }
-      
-      h1 {
-        font-size: 2.5em;
-        line-height: 1.1;
-        text-align: center;
-        margin-bottom: 1rem;
-        color: #646cff;
-      }
-      
-      h2 {
-        font-size: 1.8em;
-        color: #8f94fb;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-        border-bottom: 1px solid #444;
-        padding-bottom: 0.5rem;
-      }
-      
-      .intro {
-        margin: 2rem 0;
-        text-align: center;
-        font-size: 1.2em;
-      }
-      
-      .features-container {
-        margin: 2rem 0;
-      }
-      
-      .features-list {
-        text-align: left;
-        margin-left: 1rem;
-        line-height: 1.8;
-      }
-      
-      .features-list li {
-        margin-bottom: 0.5rem;
-        position: relative;
-        padding-left: 1.5rem;
-      }
-      
-      .features-list li::before {
-        content: "✓";
-        color: #4CAF50;
-        position: absolute;
-        left: 0;
-        font-weight: bold;
-      }
-      
-      .demo-section {
-        background-color: #2a2a2a;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 2rem 0;
-        text-align: center;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      }
-      
-      .capabilities-section {
-        margin: 2rem 0;
-      }
-      
-      .capabilities-section ol {
-        text-align: left;
-        margin-left: 1rem;
-        line-height: 1.8;
-      }
-      
-      .capabilities-section li {
-        margin-bottom: 0.8rem;
-      }
-      
-      code {
-        font-family: 'Courier New', monospace;
-        background-color: #333;
-        padding: 0.2em 0.4em;
-        border-radius: 3px;
-        font-size: 0.9em;
-      }
-      
-      .footer {
-        margin-top: 3rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #444;
-        text-align: center;
-        font-style: italic;
-        color: #888;
-      }
-      
-      /* Responsive styles */
-      @media (max-width: 768px) {
+      // Create styles
+      const style = document.createElement('style');
+      style.textContent = `
         :host {
-          padding: 1rem;
+          display: block;
+          font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+          line-height: 1.5;
+          font-weight: 400;
+          color: rgba(255, 255, 255, 0.87);
+          background-color: #242424;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 2rem;
         }
         
         h1 {
-          font-size: 2em;
+          font-size: 2.5em;
+          line-height: 1.1;
+          text-align: center;
+          margin-bottom: 1rem;
+          color: #646cff;
         }
         
         h2 {
-          font-size: 1.5em;
+          font-size: 1.8em;
+          color: #8f94fb;
+          margin-top: 2rem;
+          margin-bottom: 1rem;
+          border-bottom: 1px solid #444;
+          padding-bottom: 0.5rem;
         }
-      }
-    `;
+        
+        .intro {
+          margin: 2rem 0;
+          text-align: center;
+          font-size: 1.2em;
+        }
+        
+        .features-container {
+          margin: 2rem 0;
+        }
+        
+        .features-list {
+          text-align: left;
+          margin-left: 1rem;
+          line-height: 1.8;
+        }
+        
+        .features-list li {
+          margin-bottom: 0.5rem;
+          position: relative;
+          padding-left: 1.5rem;
+        }
+        
+        .features-list li::before {
+          content: "✓";
+          color: #4CAF50;
+          position: absolute;
+          left: 0;
+          font-weight: bold;
+        }
+        
+        .demo-section {
+          background-color: #2a2a2a;
+          border-radius: 8px;
+          padding: 1.5rem;
+          margin: 2rem 0;
+          text-align: center;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .capabilities-section {
+          margin: 2rem 0;
+        }
+        
+        .capabilities-section ol {
+          text-align: left;
+          margin-left: 1rem;
+          line-height: 1.8;
+        }
+        
+        .capabilities-section li {
+          margin-bottom: 0.8rem;
+        }
+        
+        code {
+          font-family: 'Courier New', monospace;
+          background-color: #333;
+          padding: 0.2em 0.4em;
+          border-radius: 3px;
+          font-size: 0.9em;
+        }
+        
+        .footer {
+          margin-top: 3rem;
+          padding-top: 1.5rem;
+          border-top: 1px solid #444;
+          text-align: center;
+          font-style: italic;
+          color: #888;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+          :host {
+            padding: 1rem;
+          }
+          
+          h1 {
+            font-size: 2em;
+          }
+          
+          h2 {
+            font-size: 1.5em;
+          }
+        }
+      `;
 
-    // Render initial template
-    shadow.appendChild(style);
-    this.render();
+      // Add style to shadow root
+      shadow.appendChild(style);
+    } catch (error) {
+      logger.error(
+        'Error in AppElement constructor:',
+        error instanceof Error ? error : new Error(String(error))
+      );
+
+      // Dispatch error event
+      this.dispatchEvent(
+        new CustomEvent('error', {
+          detail: { error, message: 'Error constructing app component' },
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
   }
 
   // Lifecycle: when element is added to DOM
   connectedCallback(): void {
     try {
-      // Ensure component is fully rendered
-      if (this.shadowRoot) {
+      // Ensure component is fully rendered if not already
+      if (this.shadowRoot && !this.initialized) {
         this.render();
+        this.initialized = true;
       }
     } catch (error) {
-      console.error('Error in AppElement connectedCallback:', error);
+      logger.error(
+        'Error in AppElement connectedCallback:',
+        error instanceof Error ? error : new Error(String(error))
+      );
+
+      // Dispatch error event
+      this.dispatchEvent(
+        new CustomEvent('error', {
+          detail: { error, message: 'Error initializing app component' },
+          bubbles: true,
+          composed: true,
+        })
+      );
+
       // Attempt recovery by showing minimal content
       if (this.shadowRoot) {
         const errorMsg = document.createElement('div');
@@ -165,29 +196,65 @@ export class AppElement extends HTMLElement {
   // Lifecycle: when element is removed from DOM
   disconnectedCallback(): void {
     // Clean up any event listeners or resources
-    // Currently none needed, but included for conformance with lifecycle spec
+    try {
+      if (this.shadowRoot) {
+        const counter = this.shadowRoot.querySelector('app-counter');
+        if (counter) {
+          counter.removeEventListener('counter-changed', () => {});
+          counter.removeEventListener('error', () => {});
+        }
+      }
+    } catch (error) {
+      logger.error(
+        'Error in AppElement disconnectedCallback:',
+        error instanceof Error ? error : new Error(String(error))
+      );
+    }
   }
 
   // Lifecycle: when element is moved to a new document
   adoptedCallback(): void {
     // Handle any updates necessary when the element is moved to a new document
-    // Currently none needed, but included for conformance with lifecycle spec
+    try {
+      if (this.shadowRoot) {
+        this.render();
+      }
+    } catch (error) {
+      logger.error(
+        'Error in AppElement adoptedCallback:',
+        error instanceof Error ? error : new Error(String(error))
+      );
+    }
   }
 
   // Lifecycle: when attributes change
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string): void {
-    if (name === 'title' && oldValue !== newValue) {
-      this._title = newValue || 'TypeScript PWA Template';
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+    try {
+      if (name === 'title' && oldValue !== newValue) {
+        this._title = newValue || 'TypeScript PWA Template';
 
-      // Update title if already rendered
-      if (this.shadowRoot) {
-        // Use a type assertion to handle the TypeScript error
-        const shadow = this.shadowRoot as ShadowRoot;
-        const titleElement = shadow.querySelector('h1');
-        if (titleElement) {
-          titleElement.textContent = this._title;
+        // Update title if already rendered
+        if (this.shadowRoot) {
+          const titleElement = this.shadowRoot.querySelector('h1');
+          if (titleElement) {
+            titleElement.textContent = this._title;
+          }
         }
       }
+    } catch (error) {
+      logger.error(
+        'Error in AppElement attributeChangedCallback:',
+        error instanceof Error ? error : new Error(String(error))
+      );
+
+      // Dispatch error event
+      this.dispatchEvent(
+        new CustomEvent('error', {
+          detail: { error, attribute: name },
+          bubbles: true,
+          composed: true,
+        })
+      );
     }
   }
 
@@ -266,13 +333,16 @@ export class AppElement extends HTMLElement {
 
         // Add an error handler to catch custom element connection errors
         const errorHandler = (event: Event): void => {
-          console.error('Counter component error:', event);
+          logger.error(`Counter component error: ${event.type}`);
         };
         counter.addEventListener('error', errorHandler);
 
         demoSection.appendChild(counter);
       } catch (counterError) {
-        console.error('Error creating counter component:', counterError);
+        logger.error(
+          'Error creating counter component:',
+          counterError instanceof Error ? counterError : new Error(String(counterError))
+        );
 
         // Fallback to a plain button if the custom element fails
         const fallbackButton = document.createElement('button');
@@ -340,7 +410,19 @@ export class AppElement extends HTMLElement {
         shadowRoot.appendChild(container);
       }
     } catch (renderError) {
-      console.error('Fatal error in render():', renderError);
+      logger.error(
+        'Fatal error in render():',
+        renderError instanceof Error ? renderError : new Error(String(renderError))
+      );
+
+      // Dispatch error event
+      this.dispatchEvent(
+        new CustomEvent('error', {
+          detail: { error: renderError, message: 'Fatal error rendering app component' },
+          bubbles: true,
+          composed: true,
+        })
+      );
 
       // Attempt to show a minimal error message
       if (this.shadowRoot) {
@@ -376,8 +458,23 @@ export class AppElement extends HTMLElement {
   }
 }
 
-// Define the custom element
-customElements.define('app-root', AppElement);
+// Use try-catch to ensure robustness in different environments
+try {
+  // Define the custom element if not already defined
+  if (!customElements.get('app-root')) {
+    customElements.define('app-root', AppElement);
+  }
+} catch (error) {
+  logger.error(
+    'Failed to register app-root custom element:',
+    error instanceof Error ? error : new Error(String(error))
+  );
+
+  // This would only happen in test environments
+  if (process.env.NODE_ENV === 'test') {
+    logger.warn('Failed to register app-root custom element in test environment.');
+  }
+}
 
 /**
  * Create and initialize the app
@@ -385,20 +482,28 @@ customElements.define('app-root', AppElement);
  * @param title - Optional custom title
  * @returns The created app element
  */
-export function createApp(rootSelector: string = '#app', title?: string): AppElement {
-  const rootElement = document.querySelector(rootSelector);
-  if (!rootElement) {
-    throw new Error(`Root element not found: ${rootSelector}`);
+export function createApp(rootSelector: string = '#app', title?: string): AppElement | null {
+  try {
+    const rootElement = document.querySelector(rootSelector);
+    if (!rootElement) {
+      throw new Error(`Root element not found: ${rootSelector}`);
+    }
+
+    // Create app element
+    const app = document.createElement('app-root') as AppElement;
+    if (title) {
+      app.setAttribute('title', title);
+    }
+
+    // Append to root
+    rootElement.appendChild(app);
+
+    return app;
+  } catch (error) {
+    logger.error(
+      'Error creating app component:',
+      error instanceof Error ? error : new Error(String(error))
+    );
+    return null;
   }
-
-  // Create app element
-  const app = document.createElement('app-root') as AppElement;
-  if (title) {
-    app.setAttribute('title', title);
-  }
-
-  // Append to root
-  rootElement.appendChild(app);
-
-  return app;
 }
