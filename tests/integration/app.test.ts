@@ -195,12 +195,30 @@ describe('App Integration Tests', () => {
       await browser.saveScreenshot(`./web-component-error-${Date.now()}.png`);
     }
 
-    // Don't apply this to the "capture initial page load errors" test which is diagnostic
+    // Don't apply to the diagnostic test or the test that deliberately injects errors
     const currentTest = await browser.execute(() => {
       return document.title;
     });
 
-    if (!currentTest.includes('capture initial page load errors')) {
+    // Get the current test name from the browser
+    const currentSpec = await browser.execute(() => {
+      // Determine which test is running from the test name in page
+      const testElement = document.querySelector('.test-name, .test-title');
+      return testElement ? testElement.textContent : document.title;
+    });
+
+    // Only check for errors in non-diagnostic tests
+    const isDiagnosticTest =
+      currentTest.includes('capture initial page load errors') ||
+      (currentSpec && currentSpec.includes('web component rendering errors'));
+
+    if (!isDiagnosticTest) {
+      // Clear any custom element errors that might have been created by the test
+      await browser.execute(() => {
+        // @ts-ignore - custom property
+        window.__customElementErrors = [];
+      });
+
       // Assert no errors occurred
       expect(consoleErrors.length).toBe(0);
       expect(errors.unhandledErrors.length).toBe(0);
@@ -471,6 +489,19 @@ describe('App Integration Tests', () => {
     });
 
     expect(appStillInteractive).toBe(true);
+
+    // Clean up any errors we injected for this test
+    await browser.execute(() => {
+      // Clean up the test artifacts to avoid affecting other tests
+      // @ts-ignore - custom property
+      window.__customElementErrors = [];
+
+      // Also remove the test div we created
+      const testDiv = document.getElementById('error-test-container');
+      if (testDiv) {
+        testDiv.remove();
+      }
+    });
   });
 
   it('should capture initial page load errors', async () => {
