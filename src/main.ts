@@ -157,7 +157,17 @@ class AppInitializer {
    * @returns A promise that resolves when PWA initialization is complete, or rejects with an error
    */
   private async initializePWA(): Promise<void> {
-    // Attempt to register the service worker
+    // Check if a service worker is already registered by vite-plugin-pwa
+    const hasVitePwaScript = document.getElementById('vite-plugin-pwa:register-sw');
+
+    if (hasVitePwaScript) {
+      // Vite PWA plugin is handling the service worker registration,
+      // so we'll just log this and return without additional registration
+      logger.info('PWA service worker registration handled by vite-plugin-pwa');
+      return Promise.resolve();
+    }
+
+    // Only reach here if vite-plugin-pwa isn't handling the registration
     try {
       await pwaService.register();
       logger.info('PWA service worker registered successfully');

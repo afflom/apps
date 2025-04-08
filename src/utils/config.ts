@@ -12,21 +12,21 @@ const packageVersion = process.env.npm_package_version || '1.0.0';
  * Service worker configuration
  */
 export const swConfig = {
-  // Service worker URL based on environment
-  url: process.env.NODE_ENV === 'production' ? '/sw.js' : './sw.js',
+  // Service worker URL based on environment - always use relative paths for GitHub Pages compatibility
+  url: './sw.js',
   // Default scope for the service worker
-  scope: '/',
+  scope: './',
   // Cache name with version
   cacheName: `ts-pwa-cache-v${packageVersion}`,
-  // Resources to pre-cache
+  // Resources to pre-cache - use relative paths for GitHub Pages compatibility
   precacheUrls: [
-    '/',
-    '/index.html',
-    '/favicon.ico',
-    '/robots.txt',
-    '/apple-touch-icon.png',
-    '/pwa-192x192.png',
-    '/pwa-512x512.png',
+    './',
+    './index.html',
+    './favicon.ico',
+    './robots.txt',
+    './apple-touch-icon.png',
+    './pwa-192x192.png',
+    './pwa-512x512.png',
   ],
 };
 
