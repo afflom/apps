@@ -3,7 +3,7 @@
  */
 
 import { MockShadowRoot } from './web-components';
-import { MockInstance, Mock } from 'vitest';
+import { Mock } from 'vitest';
 
 // Type for mocked CounterElement
 export interface MockedCounterElement extends HTMLElement {

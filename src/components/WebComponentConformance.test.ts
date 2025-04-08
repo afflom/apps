@@ -483,7 +483,7 @@ describe('Web Component Conformance Tests', () => {
         app.connectedCallback();
         // If we reach here, the error was handled correctly
         expect(true).toBe(true);
-      } catch (e) {
+      } catch (error) {
         // Test fails if the error propagates out
         expect('Error not caught').toBe('Error should have been caught internally');
       }
