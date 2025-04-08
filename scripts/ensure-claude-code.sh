@@ -100,7 +100,11 @@ EOF
 )
 
   # Call Claude in non-interactive mode
-  result=$(claude -p "$prompt")
+  # Use temporary file to avoid argument list too long error
+  temp_prompt_file=$(mktemp)
+  echo "$prompt" > "$temp_prompt_file"
+  result=$(claude -f "$temp_prompt_file")
+  rm -f "$temp_prompt_file"
 
   # Extract the status from the JSON response
   status=$(echo "$result" | grep -o '"status": *"[^"]*"' | cut -d '"' -f 4)
