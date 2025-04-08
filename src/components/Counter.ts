@@ -24,27 +24,38 @@ export class CounterElement extends HTMLElement {
     style.textContent = `
       :host {
         display: inline-block;
+        margin: 1rem 0;
       }
       
       button {
-        padding: 0.6em 1.2em;
-        font-size: 1em;
+        padding: 0.8em 1.6em;
+        font-size: 1.1em;
         font-weight: 500;
         font-family: inherit;
-        background-color: #f9f9f9;
+        background-color: #646cff;
+        color: white;
         cursor: pointer;
-        transition: border-color 0.25s;
+        transition: all 0.25s ease;
         border-radius: 8px;
         border: 1px solid transparent;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       }
       
       button:hover {
-        border-color: #646cff;
+        background-color: #7c82ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+      
+      button:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
       }
       
       button:focus,
       button:focus-visible {
-        outline: 4px auto -webkit-focus-ring-color;
+        outline: 3px solid rgba(100, 108, 255, 0.5);
+        outline-offset: 2px;
       }
     `;
 

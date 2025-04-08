@@ -50,8 +50,19 @@ describe('PWAService', () => {
   });
 
   describe('register', () => {
-    it('should register the service worker', async () => {
+    beforeEach(() => {
+      // Mock fetch for service worker validation
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: vi.fn().mockReturnValue('application/javascript'),
+        },
+      });
+    });
+
+    it('should register the service worker when everything is correct', async () => {
       await pwaService.register();
+      expect(global.fetch).toHaveBeenCalled();
       expect(mockWorkbox.register).toHaveBeenCalled();
     });
 
@@ -62,7 +73,31 @@ describe('PWAService', () => {
       await expect(pwaService.register()).rejects.toThrow('Service worker not supported');
     });
 
-    it('should set up update listener', async () => {
+    it('should reject if service worker file is not found', async () => {
+      // Mock fetch to return not found
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        headers: {
+          get: vi.fn(),
+        },
+      });
+
+      await expect(pwaService.register()).rejects.toThrow('Service worker file not found');
+    });
+
+    it('should reject if service worker has incorrect MIME type', async () => {
+      // Mock fetch to return incorrect MIME type
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        headers: {
+          get: vi.fn().mockReturnValue('text/html'),
+        },
+      });
+
+      await expect(pwaService.register()).rejects.toThrow('Service worker has incorrect MIME type');
+    });
+
+    it('should set up update listener when service worker is valid', async () => {
       await pwaService.register();
       expect(mockWorkbox.addEventListener).toHaveBeenCalledWith('installed', expect.any(Function));
     });

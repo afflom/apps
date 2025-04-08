@@ -17,18 +17,41 @@ export class PWAService {
         return;
       }
 
-      this.wb = new Workbox('/sw.js');
+      // Use a simple path to the service worker
+      const swURL = './sw.js';
 
-      this.wb.addEventListener('installed', (event) => {
-        if (event.isUpdate) {
-          this.showUpdatePrompt();
-        }
-      });
+      // First check if the service worker file exists and has the correct MIME type
+      fetch(swURL, { method: 'HEAD' })
+        .then((response) => {
+          const contentType = response.headers.get('content-type');
 
-      this.wb
-        .register()
-        .then(() => resolve())
-        .catch((error) => reject(error instanceof Error ? error : new Error(String(error))));
+          if (!response.ok) {
+            throw new Error(`Service worker file not found at ${swURL}`);
+          }
+
+          if (contentType && !contentType.includes('javascript')) {
+            throw new Error(`Service worker has incorrect MIME type: ${contentType}`);
+          }
+
+          // If we get here, the service worker file exists and has the correct MIME type
+          this.wb = new Workbox(swURL);
+
+          this.wb.addEventListener('installed', (event) => {
+            if (event.isUpdate) {
+              this.showUpdatePrompt();
+            }
+          });
+
+          return this.wb.register();
+        })
+        .then(() => {
+          console.info('Service worker registered successfully');
+          resolve();
+        })
+        .catch((error) => {
+          console.error('Service worker registration failed:', error);
+          reject(error instanceof Error ? error : new Error(String(error)));
+        });
     });
   }
 

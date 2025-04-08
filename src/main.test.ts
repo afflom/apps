@@ -8,6 +8,19 @@ vi.mock('./services/pwa', () => ({
   },
 }));
 
+// Mock Counter component for testing
+vi.mock('./components/Counter', () => ({
+  CounterElement: class MockCounter {
+    // Implement basic Counter functionality for tests
+    getValue(): number {
+      return 0;
+    }
+    increment(): void {}
+    setAttribute(): void {}
+  },
+  createCounter: vi.fn(),
+}));
+
 // Import after mocking
 import { pwaService } from './services/pwa';
 

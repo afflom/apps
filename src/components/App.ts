@@ -31,20 +31,111 @@ export class AppElement extends HTMLElement {
         font-weight: 400;
         color: rgba(255, 255, 255, 0.87);
         background-color: #242424;
-        text-align: center;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
       }
       
       h1 {
-        font-size: 3.2em;
+        font-size: 2.5em;
         line-height: 1.1;
+        text-align: center;
+        margin-bottom: 1rem;
+        color: #646cff;
       }
       
-      .card {
-        padding: 2em;
+      h2 {
+        font-size: 1.8em;
+        color: #8f94fb;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #444;
+        padding-bottom: 0.5rem;
       }
       
-      .read-the-docs {
+      .intro {
+        margin: 2rem 0;
+        text-align: center;
+        font-size: 1.2em;
+      }
+      
+      .features-container {
+        margin: 2rem 0;
+      }
+      
+      .features-list {
+        text-align: left;
+        margin-left: 1rem;
+        line-height: 1.8;
+      }
+      
+      .features-list li {
+        margin-bottom: 0.5rem;
+        position: relative;
+        padding-left: 1.5rem;
+      }
+      
+      .features-list li::before {
+        content: "✓";
+        color: #4CAF50;
+        position: absolute;
+        left: 0;
+        font-weight: bold;
+      }
+      
+      .demo-section {
+        background-color: #2a2a2a;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        text-align: center;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      
+      .capabilities-section {
+        margin: 2rem 0;
+      }
+      
+      .capabilities-section ol {
+        text-align: left;
+        margin-left: 1rem;
+        line-height: 1.8;
+      }
+      
+      .capabilities-section li {
+        margin-bottom: 0.8rem;
+      }
+      
+      code {
+        font-family: 'Courier New', monospace;
+        background-color: #333;
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-size: 0.9em;
+      }
+      
+      .footer {
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #444;
+        text-align: center;
+        font-style: italic;
         color: #888;
+      }
+      
+      /* Responsive styles */
+      @media (max-width: 768px) {
+        :host {
+          padding: 1rem;
+        }
+        
+        h1 {
+          font-size: 2em;
+        }
+        
+        h2 {
+          font-size: 1.5em;
+        }
       }
     `;
 
@@ -57,11 +148,7 @@ export class AppElement extends HTMLElement {
   connectedCallback(): void {
     // Ensure component is fully rendered
     if (this.shadowRoot) {
-      // Use a type assertion to handle the TypeScript error
-      const shadow = this.shadowRoot as ShadowRoot;
-      if (!shadow.querySelector('app-counter')) {
-        this.render();
-      }
+      this.render();
     }
   }
 
@@ -94,21 +181,147 @@ export class AppElement extends HTMLElement {
     titleElement.textContent = this._title;
     container.appendChild(titleElement);
 
-    // Create card with counter
-    const card = document.createElement('div');
-    card.className = 'card';
+    // Create intro section
+    const intro = document.createElement('div');
+    intro.className = 'intro';
 
-    // Create counter
-    const counter = document.createElement('app-counter');
-    counter.setAttribute('label', 'The counter value is');
-    card.appendChild(counter);
-    container.appendChild(card);
+    const introText = document.createElement('p');
+    introText.innerHTML =
+      'A modern, lightweight <strong>TypeScript Progressive Web App template</strong> with Web Components and GitHub Pages deployment.';
+    intro.appendChild(introText);
+    container.appendChild(intro);
 
-    // Create description
-    const description = document.createElement('p');
-    description.className = 'read-the-docs';
-    description.textContent = 'Click on the button to test the counter';
-    container.appendChild(description);
+    // Features section
+    const features = document.createElement('div');
+    features.className = 'features-container';
+
+    const featuresTitle = document.createElement('h2');
+    featuresTitle.textContent = 'Features';
+    features.appendChild(featuresTitle);
+
+    const featuresList = document.createElement('ul');
+    featuresList.className = 'features-list';
+
+    const featureItems = [
+      'TypeScript with strict type checking',
+      'Custom Web Components without frameworks',
+      'Vite for fast development and optimized builds',
+      'Progressive Web App (PWA) support with offline capabilities',
+      'GitHub Pages deployment through GitHub Actions',
+      'Comprehensive testing with Vitest',
+      'Modern ESLint and Prettier configuration',
+      'DevContainer and GitHub Codespaces ready',
+    ];
+
+    featureItems.forEach((item) => {
+      const li = document.createElement('li');
+      li.textContent = item;
+      featuresList.appendChild(li);
+    });
+
+    features.appendChild(featuresList);
+    container.appendChild(features);
+
+    // Example component with counter
+    const demoSection = document.createElement('div');
+    demoSection.className = 'demo-section';
+
+    const demoTitle = document.createElement('h2');
+    demoTitle.textContent = 'Interactive Demo';
+    demoSection.appendChild(demoTitle);
+
+    const demoDescription = document.createElement('p');
+    demoDescription.textContent =
+      'This counter demonstrates the interactive functionality you can build with this template:';
+    demoSection.appendChild(demoDescription);
+
+    // Create a button to demonstrate functionality (instead of using app-counter)
+    const counterBtn = document.createElement('button');
+    counterBtn.textContent = 'Counter: 0';
+    counterBtn.className = 'demo-button';
+    let count = 0;
+
+    // Add click functionality
+    counterBtn.addEventListener('click', () => {
+      count++;
+      counterBtn.textContent = `Counter: ${count}`;
+    });
+
+    // Add button styles to the global style element
+    const styleEl = document.createElement('style');
+    styleEl.textContent = `
+      .demo-button {
+        padding: 0.8em 1.6em;
+        font-size: 1.1em;
+        font-weight: 500;
+        background-color: #646cff;
+        color: white;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        margin: 1.5rem 0;
+        transition: all 0.25s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      
+      .demo-button:hover {
+        background-color: #7c82ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+      
+      .demo-button:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      }
+    `;
+
+    // Add styles to the shadow root
+    if (this.shadowRoot) {
+      this.shadowRoot.appendChild(styleEl);
+    }
+
+    demoSection.appendChild(counterBtn);
+    container.appendChild(demoSection);
+
+    // Key Capabilities section
+    const capabilities = document.createElement('div');
+    capabilities.className = 'capabilities-section';
+
+    const capabilitiesTitle = document.createElement('h2');
+    capabilitiesTitle.textContent = 'Key Capabilities';
+    capabilities.appendChild(capabilitiesTitle);
+
+    const capabilitiesList = document.createElement('ol');
+
+    const capabilityItems = [
+      'Offline support with Service Worker caching',
+      'TypeScript for robust, type-safe code',
+      'Web Components for modular UI architecture',
+      'Fast builds and hot module replacement',
+      'Modern tooling with ESLint and Prettier',
+      'Comprehensive test infrastructure',
+      'Continuous integration and deployment',
+    ];
+
+    capabilityItems.forEach((item) => {
+      const li = document.createElement('li');
+      li.innerHTML = item;
+      capabilitiesList.appendChild(li);
+    });
+
+    capabilities.appendChild(capabilitiesList);
+    container.appendChild(capabilities);
+
+    // Create footer
+    const footer = document.createElement('footer');
+    footer.className = 'footer';
+
+    const footerText = document.createElement('p');
+    footerText.innerHTML = 'Built with TypeScript Progressive Web App architecture';
+    footer.appendChild(footerText);
+
+    container.appendChild(footer);
 
     // Add to shadow root (clear existing content first)
     const shadowRoot = this.shadowRoot;
