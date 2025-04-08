@@ -7,6 +7,7 @@
 
 import { vi } from 'vitest';
 import { MockedCounterElement, MockedAppElement } from './types';
+import { config } from '../utils/config';
 
 /**
  * Helper function to create a properly mocked CounterElement
@@ -127,8 +128,14 @@ export function createMockAppElement(): MockedAppElement {
   // Create the element
   const app = document.createElement('app-root');
 
-  // Add internal state
-  let title = app.getAttribute('title') || 'TypeScript PWA Template';
+  // Add internal state with app title from config
+  let title = app.getAttribute('title') || config.appTitle;
+
+  // Add custom tag name property to help tests that check against tagName
+  Object.defineProperty(app, '_customTagName', {
+    value: 'app-root',
+    writable: false,
+  });
 
   // Create a shadowRoot if it doesn't exist
   if (!app.shadowRoot) {

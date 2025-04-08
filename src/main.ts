@@ -71,8 +71,13 @@ class AppInitializer {
 
     // Capture unhandled errors
     window.addEventListener('error', (event) => {
-      const errorMsg = event.error ? event.error.message : event.message || '';
-      const error = event.error || new Error(errorMsg);
+      const errorMsg =
+        event.error instanceof Error
+          ? event.error.message
+          : typeof event.message === 'string'
+            ? event.message
+            : 'Unknown error';
+      const error = event.error instanceof Error ? event.error : new Error(errorMsg);
 
       // Track all errors
       logger.error('Unhandled error: ' + errorMsg);
@@ -83,10 +88,10 @@ class AppInitializer {
       w.__app_errors.push({
         type: 'error',
         message: errorMsg,
-        source: event.filename || 'unknown',
+        source: typeof event.filename === 'string' ? event.filename : 'unknown',
         line: event.lineno,
         column: event.colno,
-        stack: error.stack,
+        stack: typeof error.stack === 'string' ? error.stack : undefined,
         timestamp: new Date().toISOString(),
       });
 

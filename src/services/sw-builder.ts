@@ -102,8 +102,9 @@ export function generateServiceWorker(outputPath: string): void {
   fs.writeFileSync(path.join(outputPath, 'sw.js'), sw_template);
   // Log only during build, not imported
   if (require.main === module) {
-    console.log(
-      `Service worker generated at ${outputPath}/sw.js with cache name ${swConfig.cacheName}`
+    // Using process.stdout instead of console.log for build output
+    process.stdout.write(
+      `Service worker generated at ${outputPath}/sw.js with cache name ${swConfig.cacheName}\n`
     );
   }
 }

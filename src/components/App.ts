@@ -482,28 +482,21 @@ try {
  * @param title - Optional custom title
  * @returns The created app element
  */
-export function createApp(rootSelector: string = '#app', title?: string): AppElement | null {
-  try {
-    const rootElement = document.querySelector(rootSelector);
-    if (!rootElement) {
-      throw new Error(`Root element not found: ${rootSelector}`);
-    }
-
-    // Create app element
-    const app = document.createElement('app-root') as AppElement;
-    if (title) {
-      app.setAttribute('title', title);
-    }
-
-    // Append to root
-    rootElement.appendChild(app);
-
-    return app;
-  } catch (error) {
-    logger.error(
-      'Error creating app component:',
-      error instanceof Error ? error : new Error(String(error))
-    );
-    return null;
+export function createApp(rootSelector: string = '#app', title?: string): AppElement {
+  const rootElement = document.querySelector(rootSelector);
+  if (!rootElement) {
+    const error = new Error(`Root element not found: ${rootSelector}`);
+    logger.error('Error creating app component:', error);
+    throw error;
   }
+
+  // Create app element
+  const app = document.createElement('app-root') as AppElement;
+  if (title) {
+    app.setAttribute('title', title);
+  }
+
+  // Append to root
+  rootElement.appendChild(app);
+  return app;
 }

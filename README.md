@@ -11,7 +11,6 @@ A fully-featured TypeScript PWA template that deploys to GitHub Pages using GitH
 - 🧪 In-browser testing with Vitest
 - 🔄 Automatic GitHub Pages deployment
 - 🎨 Basic styling and counter example
-- 📦 Uses `@uor-foundation/math-js` for demonstration
 - 🐳 DevContainer and GitHub Codespaces ready
 - 🤖 Claude Code integration for AI-assisted development
 - 🔧 Automated issue implementation by Claude AI

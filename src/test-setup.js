@@ -204,18 +204,38 @@ global.mockWebComponent = function (name) {
   class MockComponent extends HTMLElement {
     constructor() {
       super();
-      this.shadowRoot = new MockShadowRoot();
-      this.attributes = new Map();
+      // Use attachShadow instead of direct assignment
+      this.attachShadow({ mode: 'open' });
+      // Store attributes privately to avoid conflicts with Element properties
+      this._mockAttributes = new Map();
     }
 
     getAttribute(name) {
-      return this.attributes.get(name) || null;
+      // Try the native implementation first
+      const nativeValue = super.getAttribute && super.getAttribute(name);
+      if (nativeValue !== null && nativeValue !== undefined) {
+        return nativeValue;
+      }
+      // Fall back to our internal map
+      return this._mockAttributes.get(name) || null;
     }
 
     setAttribute(name, value) {
-      this.attributes.set(name, value);
+      try {
+        // Try to use the native implementation first
+        if (super.setAttribute) {
+          super.setAttribute(name, value);
+        }
+      } catch (e) {
+        // If native implementation fails, use our internal map
+        this._mockAttributes.set(name, value);
+      }
+      
+      // Always call attributeChangedCallback if it exists
       if (this.attributeChangedCallback) {
-        this.attributeChangedCallback(name, this.getAttribute(name), value);
+        const oldValue = this._mockAttributes.get(name);
+        this._mockAttributes.set(name, value);
+        this.attributeChangedCallback(name, oldValue, value);
       }
     }
 
@@ -236,6 +256,19 @@ global.mockWebComponent = function (name) {
   return MockComponent;
 };
 
-// Register our main components for tests
-mockWebComponent('app-root');
-mockWebComponent('app-counter');
+// Register our main components for tests with observed attributes
+const AppRootMock = mockWebComponent('app-root');
+// Add observed attributes to match the real component
+AppRootMock.observedAttributes = ['title'];
+
+const AppCounterMock = mockWebComponent('app-counter');
+// Add observed attributes to match the real component
+AppCounterMock.observedAttributes = ['count', 'label'];
+
+// Register these enhanced mocks
+if (!customElements.get('app-root')) {
+  customElements.define('app-root', AppRootMock);
+}
+if (!customElements.get('app-counter')) {
+  customElements.define('app-counter', AppCounterMock);
+}

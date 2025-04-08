@@ -280,24 +280,18 @@ export function createCounter(
   parentSelector: string,
   initialCount: number = 0,
   label: string = 'The counter value is'
-): CounterElement | null {
-  try {
-    const parent = document.querySelector(parentSelector);
-    if (!parent) {
-      throw new Error(`Parent element not found: ${parentSelector}`);
-    }
-
-    const counter = document.createElement('app-counter') as CounterElement;
-    counter.setAttribute('count', String(initialCount));
-    counter.setAttribute('label', label);
-
-    parent.appendChild(counter);
-    return counter;
-  } catch (error) {
-    logger.error(
-      'Error creating counter component:',
-      error instanceof Error ? error : new Error(String(error))
-    );
-    return null;
+): CounterElement {
+  const parent = document.querySelector(parentSelector);
+  if (!parent) {
+    const error = new Error(`Parent element not found: ${parentSelector}`);
+    logger.error('Error creating counter component:', error);
+    throw error;
   }
+
+  const counter = document.createElement('app-counter') as CounterElement;
+  counter.setAttribute('count', String(initialCount));
+  counter.setAttribute('label', label);
+
+  parent.appendChild(counter);
+  return counter;
 }

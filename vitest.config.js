@@ -11,15 +11,9 @@ export default defineConfig({
     globals: true,
     // Running in JSDOM for simplicity, with custom element support
     setupFiles: ['./src/test-setup.js'],
-    deps: {
-      optimizer: {
-        web: {
-          include: ['@uor-foundation/math-js'],
-        },
-      },
-    },
     testTimeout: 10000,
     hookTimeout: 10000,
+    exclude: ['**/tests/integration/**'],
   },
   resolve: {
     alias: {
