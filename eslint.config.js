@@ -99,6 +99,43 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  // WebdriverIO integration tests
+  {
+    files: ['tests/integration/*.ts', 'tests/wdio.d.ts', 'wdio.conf.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.wdio.json'],
+      },
+      globals: {
+        browser: 'readonly',
+        $: 'readonly',
+        $$: 'readonly',
+        expect: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        before: 'readonly',
+        beforeEach: 'readonly',
+        after: 'readonly',
+        afterEach: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      'prefer-rest-params': 'off',
+      'no-console': 'off',
+    },
+  },
   // Vite config
   {
     files: ['vite.config.ts'],

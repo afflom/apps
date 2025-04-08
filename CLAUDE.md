@@ -14,7 +14,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Single test: `npm run test src/path/to/file.test.ts`
 - Single test case: `npm run test -- -t "test name pattern"`
 - Test with coverage: `npm run test:coverage`
-- Validate all: `npm run validate`
+- Integration tests: `npm run test:integration`
+- E2E tests with build: `npm run test:e2e`
+- Validate all: `npm run validate:all`
 - Deploy to dev: `npm run deploy:dev` (requires GITHUB_TOKEN)
 
 ## Code Style
@@ -26,6 +28,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Error handling**: Promise rejections must be caught, errors should be typed
 - **Component structure**: Place services in `/services`, utilities in `/utils`
 - **Testing**: All components must have browser-based tests with high coverage
+  - Unit tests: Component and utility testing with Vitest (run in pre-commit hook)
+  - Integration tests: Full browser tests with WebdriverIO that verify the built application (run in pre-push hook)
 
 The codebase is a TypeScript PWA with multi-environment GitHub Pages deployment (dev, staging, production) via GitHub Actions and enforces in-browser testing.
 
