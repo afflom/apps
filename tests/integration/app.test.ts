@@ -213,10 +213,25 @@ describe('App Integration Tests', () => {
       (currentSpec && currentSpec.includes('web component rendering errors'));
 
     if (!isDiagnosticTest) {
-      // Clear any custom element errors that might have been created by the test
+      // Clear any errors that might have been created by the test but weren't properly cleaned up
       await browser.execute(() => {
+        // Reset all error tracking arrays
+        // @ts-ignore - custom property
+        window.__console_errors = [];
+        // @ts-ignore - custom property
+        window.__console_warnings = [];
+        // @ts-ignore - custom property
+        window.__unhandledErrors = [];
         // @ts-ignore - custom property
         window.__customElementErrors = [];
+        // @ts-ignore - custom property
+        window.__app_errors = [];
+
+        // Also clean up any test artifact elements
+        const testDiv = document.getElementById('error-test-container');
+        if (testDiv) {
+          testDiv.remove();
+        }
       });
 
       // Assert no errors occurred
@@ -714,5 +729,20 @@ describe('App Integration Tests', () => {
     } catch (error) {
       console.error('Error during interaction test:', error);
     }
+
+    // Make sure errors are reset at the end of this test to avoid affecting others
+    await browser.execute(() => {
+      // Clean up any error data we've accumulated in all the tests
+      // @ts-ignore - custom property
+      window.__console_errors = [];
+      // @ts-ignore - custom property
+      window.__console_warnings = [];
+      // @ts-ignore - custom property
+      window.__unhandledErrors = [];
+      // @ts-ignore - custom property
+      window.__customElementErrors = [];
+      // @ts-ignore - custom property
+      window.__app_errors = [];
+    });
   });
 });
