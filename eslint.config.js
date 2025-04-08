@@ -42,7 +42,7 @@ export default tseslint.config(
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        project: ['./tsconfig.json'],
+        project: ['./tsconfig.json', './tsconfig.vitest.json'],
       },
     },
     rules: {
@@ -76,7 +76,12 @@ export default tseslint.config(
   },
   // Test files
   {
-    files: ['**/*.test.ts', '**/*.spec.ts'],
+    files: ['**/*.test.ts', '**/*.spec.ts', 'src/test-utils/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.vitest.json'],
+      },
+    },
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',

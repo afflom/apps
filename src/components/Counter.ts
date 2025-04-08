@@ -75,15 +75,36 @@ export class CounterElement extends HTMLElement {
 
   // Lifecycle: when element is added to DOM
   connectedCallback(): void {
-    this.updateDisplay();
+    try {
+      this.updateDisplay();
+    } catch (error) {
+      console.error('Error in CounterElement connectedCallback:', error);
+      // Try to recover by showing fallback content
+      if (this.shadowRoot) {
+        const fallback = document.createElement('div');
+        fallback.textContent = 'Error loading counter';
+        fallback.style.color = 'red';
+        this.shadowRoot.appendChild(fallback);
+      }
+    }
+  }
+
+  // Lifecycle: when element is removed from DOM
+  disconnectedCallback(): void {
+    // Clean up any event listeners or resources
+    // Currently none needed, but included for conformance with lifecycle spec
   }
 
   // Lifecycle: when attributes change
-  attributeChangedCallback(name: string, oldValue: string, newValue: string): void {
-    if (name === 'count' && oldValue !== newValue) {
-      this.setCounter(parseInt(newValue, 10) || 0);
-    } else if (name === 'label') {
-      this.updateDisplay();
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string): void {
+    try {
+      if (name === 'count' && oldValue !== newValue) {
+        this.setCounter(parseInt(newValue, 10) || 0);
+      } else if (name === 'label' && oldValue !== newValue) {
+        this.updateDisplay();
+      }
+    } catch (error) {
+      console.error('Error in CounterElement attributeChangedCallback:', error);
     }
   }
 
@@ -124,8 +145,19 @@ export class CounterElement extends HTMLElement {
    * Update element display with current counter value
    */
   private updateDisplay(): void {
-    const label = this.getAttribute('label') || 'Count';
-    this.button.textContent = `${label}: ${this.counter}`;
+    try {
+      const label = this.getAttribute('label') || 'Count';
+
+      // Make sure button exists before updating it
+      if (!this.button) {
+        console.error('Button element not found in counter component');
+        return;
+      }
+
+      this.button.textContent = `${label}: ${this.counter}`;
+    } catch (error) {
+      console.error('Error updating counter display:', error);
+    }
   }
 
   /**

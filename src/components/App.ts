@@ -146,14 +146,36 @@ export class AppElement extends HTMLElement {
 
   // Lifecycle: when element is added to DOM
   connectedCallback(): void {
-    // Ensure component is fully rendered
-    if (this.shadowRoot) {
-      this.render();
+    try {
+      // Ensure component is fully rendered
+      if (this.shadowRoot) {
+        this.render();
+      }
+    } catch (error) {
+      console.error('Error in AppElement connectedCallback:', error);
+      // Attempt recovery by showing minimal content
+      if (this.shadowRoot) {
+        const errorMsg = document.createElement('div');
+        errorMsg.innerHTML = `<h1>App Error</h1><p>Error rendering app. See console for details.</p>`;
+        this.shadowRoot.appendChild(errorMsg);
+      }
     }
   }
 
+  // Lifecycle: when element is removed from DOM
+  disconnectedCallback(): void {
+    // Clean up any event listeners or resources
+    // Currently none needed, but included for conformance with lifecycle spec
+  }
+
+  // Lifecycle: when element is moved to a new document
+  adoptedCallback(): void {
+    // Handle any updates necessary when the element is moved to a new document
+    // Currently none needed, but included for conformance with lifecycle spec
+  }
+
   // Lifecycle: when attributes change
-  attributeChangedCallback(name: string, oldValue: string, newValue: string): void {
+  attributeChangedCallback(name: string, oldValue: string | null, newValue: string): void {
     if (name === 'title' && oldValue !== newValue) {
       this._title = newValue || 'TypeScript PWA Template';
 
@@ -173,126 +195,183 @@ export class AppElement extends HTMLElement {
    * Render the app content
    */
   private render(): void {
-    // Create app container
-    const container = document.createElement('div');
+    try {
+      // Create app container
+      const container = document.createElement('div');
 
-    // Create title
-    const titleElement = document.createElement('h1');
-    titleElement.textContent = this._title;
-    container.appendChild(titleElement);
+      // Create title
+      const titleElement = document.createElement('h1');
+      titleElement.textContent = this._title;
+      container.appendChild(titleElement);
 
-    // Create intro section
-    const intro = document.createElement('div');
-    intro.className = 'intro';
+      // Create intro section
+      const intro = document.createElement('div');
+      intro.className = 'intro';
 
-    const introText = document.createElement('p');
-    introText.innerHTML =
-      'A modern, lightweight <strong>TypeScript Progressive Web App template</strong> with Web Components and GitHub Pages deployment.';
-    intro.appendChild(introText);
-    container.appendChild(intro);
+      const introText = document.createElement('p');
+      introText.innerHTML =
+        'A modern, lightweight <strong>TypeScript Progressive Web App template</strong> with Web Components and GitHub Pages deployment.';
+      intro.appendChild(introText);
+      container.appendChild(intro);
 
-    // Features section
-    const features = document.createElement('div');
-    features.className = 'features-container';
+      // Features section
+      const features = document.createElement('div');
+      features.className = 'features-container';
 
-    const featuresTitle = document.createElement('h2');
-    featuresTitle.textContent = 'Features';
-    features.appendChild(featuresTitle);
+      const featuresTitle = document.createElement('h2');
+      featuresTitle.textContent = 'Features';
+      features.appendChild(featuresTitle);
 
-    const featuresList = document.createElement('ul');
-    featuresList.className = 'features-list';
+      const featuresList = document.createElement('ul');
+      featuresList.className = 'features-list';
 
-    const featureItems = [
-      'TypeScript with strict type checking',
-      'Custom Web Components without frameworks',
-      'Vite for fast development and optimized builds',
-      'Progressive Web App (PWA) support with offline capabilities',
-      'GitHub Pages deployment through GitHub Actions',
-      'Comprehensive testing with Vitest',
-      'Modern ESLint and Prettier configuration',
-      'DevContainer and GitHub Codespaces ready',
-    ];
+      const featureItems = [
+        'TypeScript with strict type checking',
+        'Custom Web Components without frameworks',
+        'Vite for fast development and optimized builds',
+        'Progressive Web App (PWA) support with offline capabilities',
+        'GitHub Pages deployment through GitHub Actions',
+        'Comprehensive testing with Vitest',
+        'Modern ESLint and Prettier configuration',
+        'DevContainer and GitHub Codespaces ready',
+      ];
 
-    featureItems.forEach((item) => {
-      const li = document.createElement('li');
-      li.textContent = item;
-      featuresList.appendChild(li);
-    });
+      featureItems.forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        featuresList.appendChild(li);
+      });
 
-    features.appendChild(featuresList);
-    container.appendChild(features);
+      features.appendChild(featuresList);
+      container.appendChild(features);
 
-    // Example component with counter
-    const demoSection = document.createElement('div');
-    demoSection.className = 'demo-section';
+      // Example component with counter
+      const demoSection = document.createElement('div');
+      demoSection.className = 'demo-section';
 
-    const demoTitle = document.createElement('h2');
-    demoTitle.textContent = 'Interactive Demo';
-    demoSection.appendChild(demoTitle);
+      const demoTitle = document.createElement('h2');
+      demoTitle.textContent = 'Interactive Demo';
+      demoSection.appendChild(demoTitle);
 
-    const demoDescription = document.createElement('p');
-    demoDescription.textContent =
-      'This counter demonstrates the interactive functionality you can build with this template:';
-    demoSection.appendChild(demoDescription);
+      const demoDescription = document.createElement('p');
+      demoDescription.textContent =
+        'This counter demonstrates the interactive functionality you can build with this template:';
+      demoSection.appendChild(demoDescription);
 
-    // Create a counter component
-    const counter = document.createElement('app-counter');
-    counter.setAttribute('label', 'Counter');
-    counter.setAttribute('count', '0');
+      try {
+        // Create a counter component - wrapped in try/catch to handle potential errors
+        const counter = document.createElement('app-counter');
+        counter.setAttribute('label', 'Counter');
+        counter.setAttribute('count', '0');
 
-    demoSection.appendChild(counter);
-    container.appendChild(demoSection);
+        // Add an error handler to catch custom element connection errors
+        const errorHandler = (event: Event): void => {
+          console.error('Counter component error:', event);
+        };
+        counter.addEventListener('error', errorHandler);
 
-    // Key Capabilities section
-    const capabilities = document.createElement('div');
-    capabilities.className = 'capabilities-section';
+        demoSection.appendChild(counter);
+      } catch (counterError) {
+        console.error('Error creating counter component:', counterError);
 
-    const capabilitiesTitle = document.createElement('h2');
-    capabilitiesTitle.textContent = 'Key Capabilities';
-    capabilities.appendChild(capabilitiesTitle);
+        // Fallback to a plain button if the custom element fails
+        const fallbackButton = document.createElement('button');
+        fallbackButton.textContent = 'Counter (Component Failed)';
+        fallbackButton.style.padding = '8px 16px';
+        fallbackButton.style.background = '#646cff';
+        fallbackButton.style.color = 'white';
+        fallbackButton.style.border = 'none';
+        fallbackButton.style.borderRadius = '4px';
 
-    const capabilitiesList = document.createElement('ol');
-
-    const capabilityItems = [
-      'Offline support with Service Worker caching',
-      'TypeScript for robust, type-safe code',
-      'Web Components for modular UI architecture',
-      'Fast builds and hot module replacement',
-      'Modern tooling with ESLint and Prettier',
-      'Comprehensive test infrastructure',
-      'Continuous integration and deployment',
-    ];
-
-    capabilityItems.forEach((item) => {
-      const li = document.createElement('li');
-      li.innerHTML = item;
-      capabilitiesList.appendChild(li);
-    });
-
-    capabilities.appendChild(capabilitiesList);
-    container.appendChild(capabilities);
-
-    // Create footer
-    const footer = document.createElement('footer');
-    footer.className = 'footer';
-
-    const footerText = document.createElement('p');
-    footerText.innerHTML = 'Built with TypeScript Progressive Web App architecture';
-    footer.appendChild(footerText);
-
-    container.appendChild(footer);
-
-    // Add to shadow root (clear existing content first)
-    const shadowRoot = this.shadowRoot;
-    if (shadowRoot) {
-      // Remove any existing content container to avoid duplication
-      // Keep only the first child which is the style element
-      while (shadowRoot.childNodes.length > 1) {
-        shadowRoot.removeChild(shadowRoot.lastChild as Node);
+        demoSection.appendChild(fallbackButton);
       }
 
-      // Append the new container
-      shadowRoot.appendChild(container);
+      container.appendChild(demoSection);
+
+      // Key Capabilities section
+      const capabilities = document.createElement('div');
+      capabilities.className = 'capabilities-section';
+
+      const capabilitiesTitle = document.createElement('h2');
+      capabilitiesTitle.textContent = 'Key Capabilities';
+      capabilities.appendChild(capabilitiesTitle);
+
+      const capabilitiesList = document.createElement('ol');
+
+      const capabilityItems = [
+        'Offline support with Service Worker caching',
+        'TypeScript for robust, type-safe code',
+        'Web Components for modular UI architecture',
+        'Fast builds and hot module replacement',
+        'Modern tooling with ESLint and Prettier',
+        'Comprehensive test infrastructure',
+        'Continuous integration and deployment',
+      ];
+
+      capabilityItems.forEach((item) => {
+        const li = document.createElement('li');
+        li.innerHTML = item;
+        capabilitiesList.appendChild(li);
+      });
+
+      capabilities.appendChild(capabilitiesList);
+      container.appendChild(capabilities);
+
+      // Create footer
+      const footer = document.createElement('footer');
+      footer.className = 'footer';
+
+      const footerText = document.createElement('p');
+      footerText.innerHTML = 'Built with TypeScript Progressive Web App architecture';
+      footer.appendChild(footerText);
+
+      container.appendChild(footer);
+
+      // Add to shadow root (clear existing content first)
+      const shadowRoot = this.shadowRoot;
+      if (shadowRoot) {
+        // Remove any existing content container to avoid duplication
+        // Keep only the first child which is the style element
+        while (shadowRoot.childNodes.length > 1) {
+          shadowRoot.removeChild(shadowRoot.lastChild as Node);
+        }
+
+        // Append the new container
+        shadowRoot.appendChild(container);
+      }
+    } catch (renderError) {
+      console.error('Fatal error in render():', renderError);
+
+      // Attempt to show a minimal error message
+      if (this.shadowRoot) {
+        const errorDiv = document.createElement('div');
+        errorDiv.innerHTML = `
+          <style>
+            .error-container {
+              font-family: sans-serif;
+              color: #ff3e3e;
+              padding: 20px;
+              border: 1px solid #ff3e3e;
+              border-radius: 4px;
+              margin: 20px;
+              background-color: #fff1f1;
+            }
+          </style>
+          <div class="error-container">
+            <h2>App Rendering Error</h2>
+            <p>There was an error rendering the application:</p>
+            <pre>${renderError instanceof Error ? renderError.message : String(renderError)}</pre>
+            <p>Please check the console for more details.</p>
+          </div>
+        `;
+
+        // Clear shadow DOM first
+        while (this.shadowRoot.childNodes.length > 0) {
+          this.shadowRoot.removeChild(this.shadowRoot.childNodes[0]);
+        }
+
+        this.shadowRoot.appendChild(errorDiv);
+      }
     }
   }
 }
