@@ -17,6 +17,9 @@
     "test:integration": "wdio run wdio.conf.ts",
     "test:integration:watch": "wdio run wdio.conf.ts --watch",
     "test:e2e": "npm run build && npm run preview & sleep 2 && npm run test:integration",
+    "test:actions": "bash scripts/run-act.sh",
+    "test:actions:list": "bash scripts/run-act.sh --list",
+    "test:ci": "npm run validate && npm run test && npm run test:actions",
     "lint:src": "eslint --config eslint.config.js 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint --config eslint.config.js 'src/**/*.{ts,tsx}' 'tests/**/*.ts' '*.ts' --fix",
     "lint": "eslint --config eslint.config.js 'src/**/*.{ts,tsx}' 'tests/**/*.ts' 'scripts/**/*.js' '*.{js,ts}'",
@@ -30,6 +33,7 @@
     "prepare": "husky",
     "deploy:dev": "node scripts/deploy-dev.js",
     "setup:devcontainer": "bash scripts/setup-devcontainer.sh",
+    "setup:act": "bash scripts/install-act.sh",
     "claude-code": "bash scripts/ensure-claude-code.sh"
   },
   "dependencies": {

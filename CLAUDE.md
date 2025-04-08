@@ -16,6 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Test with coverage: `npm run test:coverage`
 - Integration tests: `npm run test:integration`
 - E2E tests with build: `npm run test:e2e`
+- Test GitHub Actions with Act: `npm run test:actions`
+- Complete CI validation: `npm run test:ci`
 - Validate all: `npm run validate:all`
 - Deploy to dev: `npm run deploy:dev` (requires GITHUB_TOKEN)
 
@@ -31,7 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Unit tests: Component and utility testing with Vitest (run in pre-commit hook)
   - Integration tests: Full browser tests with WebdriverIO that verify the built application (run in pre-push hook)
 
-The codebase is a TypeScript PWA with multi-environment GitHub Pages deployment (dev, staging, production) via GitHub Actions and enforces in-browser testing.
+The codebase is a TypeScript PWA with multi-environment GitHub Pages deployment (dev, staging, production) via GitHub Actions, enforces in-browser testing, and includes local GitHub Actions validation with Act to prevent CI/CD failures.
 
 ## Development Environment
 

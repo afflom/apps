@@ -14,6 +14,7 @@ A fully-featured TypeScript PWA template that deploys to GitHub Pages using GitH
 - 🐳 DevContainer and GitHub Codespaces ready
 - 🤖 Claude Code integration for AI-assisted development
 - 🔧 Automated issue implementation by Claude AI
+- 🧪 Local GitHub Actions testing with Act
 
 ## Getting Started
 
@@ -31,6 +32,12 @@ npm test
 
 # Run tests in watch mode
 npm run test:watch
+
+# Test GitHub Actions workflows locally
+npm run test:actions
+
+# Run complete CI validation (tests + GitHub Actions)
+npm run test:ci
 
 # Type checking
 npm run typecheck
@@ -96,9 +103,24 @@ Automatically deployed when a Pull Request is created or updated. A comment with
 
 Automatically deployed when changes are pushed to the `main` branch.
 
-## In-Browser Testing
+## Testing
 
-All tests run in a browser environment to ensure accurate DOM testing. The tests are located in `src/*.test.ts` files and use Vitest with browser support.
+### In-Browser Testing
+
+All component tests run in a browser environment to ensure accurate DOM testing. The tests are located in `src/*.test.ts` files and use Vitest with browser support.
+
+### GitHub Actions Testing
+
+This repository integrates [Act](https://github.com/nektos/act) to validate GitHub Actions workflows locally before pushing:
+
+```bash
+# Test GitHub Actions workflows locally
+npm run test:actions
+```
+
+This prevents CI/CD failures by ensuring your workflows will run successfully before code is pushed to GitHub. The pre-push hook automatically runs these tests as part of the validation process.
+
+For more details, see [GitHub Actions Testing Documentation](./.github/GITHUB_ACTIONS_TESTING.md).
 
 ## PWA Features
 
