@@ -12,9 +12,7 @@ describe('App Integration Tests', () => {
   let consoleWarnings: any[] = [];
   let unhandledErrors: any[] = [];
 
-  beforeAll(async () => {
-    // Nothing needed here as we set up error capturing in beforeEach
-  });
+  // Setup before first test - no additional setup needed here as all is handled in beforeEach
 
   beforeEach(async () => {
     // Set up error capturing BEFORE navigating to the page
