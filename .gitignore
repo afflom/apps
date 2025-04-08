@@ -22,4 +22,6 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?page-load-state.png
+*.sw?
+page-load-state.png
+public/sw.js
