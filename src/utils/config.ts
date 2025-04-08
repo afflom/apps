@@ -5,8 +5,39 @@
  * It uses environment variables and package.json version when available.
  */
 
-// Get package version from environment if available
-const packageVersion = process.env.npm_package_version || '1.0.0';
+/**
+ * Get application environment variables with validation
+ *
+ * These values should be set during build/runtime:
+ * - In development: by running npm scripts which set them
+ * - In production: by build system or deployment platform
+ */
+
+// Validate and get package version
+const getPackageVersion = (): string => {
+  const version = process.env.npm_package_version;
+  // Validate semantic versioning pattern
+  if (version && /^\d+\.\d+\.\d+/.test(version)) {
+    return version;
+  }
+  // Fallback for development/testing
+  return '1.0.0';
+};
+
+// Validate environment
+const getNodeEnv = (): string => {
+  const env = process.env.NODE_ENV;
+  // Only accept valid environments
+  if (env === 'production' || env === 'development' || env === 'test') {
+    return env;
+  }
+  // Default to development for safety
+  return 'development';
+};
+
+// Initialize validated config values
+const packageVersion = getPackageVersion();
+const nodeEnv = getNodeEnv();
 
 /**
  * Service worker configuration
@@ -38,6 +69,18 @@ export const appConfig = {
   rootSelector: '#app',
   // Container ID for error display
   errorContainerId: 'app-error-container',
-  // Default application title
-  defaultTitle: 'TypeScript PWA Template',
+  // Application title - load from environment with validated fallback
+  defaultTitle: (() => {
+    const title = process.env.APP_TITLE;
+    // Only use environment variable if it's not empty
+    if (title && title.trim().length > 0) {
+      return title.trim();
+    }
+    // Fallback for consistency with tests
+    return 'TypeScript PWA Template';
+  })(),
+  // Current environment
+  environment: nodeEnv,
+  // Is production environment
+  isProduction: nodeEnv === 'production',
 };

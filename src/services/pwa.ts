@@ -2,9 +2,25 @@ import { Workbox } from 'workbox-window';
 import { swConfig } from '../utils/config';
 import * as logger from '../utils/logger';
 
-// Define custom error event type
+// Import Workbox types for better type checking
+import { WorkboxLifecycleEvent } from 'workbox-window';
+
+/**
+ * Extended type definition for Workbox error events
+ * This matches the Workbox window error event structure
+ */
 interface WorkboxErrorEvent extends Event {
   error?: Error;
+}
+
+/**
+ * Augment the WorkboxLifecycleEvent to ensure isUpdate exists
+ * Our code uses this property to determine if the service worker is being updated
+ */
+declare module 'workbox-window' {
+  interface WorkboxLifecycleEvent {
+    isUpdate?: boolean;
+  }
 }
 
 /**
@@ -51,7 +67,7 @@ export class PWAService {
 
     try {
       // Handle service worker installation
-      this.wb.addEventListener('installed', (event) => {
+      this.wb.addEventListener('installed', (event: WorkboxLifecycleEvent) => {
         if (event.isUpdate) {
           logger.info('Service worker updated - showing update prompt');
           this.showUpdatePrompt();
@@ -66,7 +82,7 @@ export class PWAService {
       });
 
       // Handle service worker activation
-      this.wb.addEventListener('activated', (event) => {
+      this.wb.addEventListener('activated', (event: WorkboxLifecycleEvent) => {
         if (event.isUpdate) {
           logger.info('Service worker activated after update');
         } else {
@@ -80,10 +96,12 @@ export class PWAService {
         this.showUpdatePrompt();
       });
 
-      // Handle registration errors
-      // Cast to 'any' only for the event name string, as 'error' is not in the official type definitions
-      this.wb.addEventListener('error' as any, (event: WorkboxErrorEvent) => {
-        const errorMsg = event.error ? event.error.message : String(event);
+      // Handle registration errors - Workbox supports 'error' events but the TypeScript type definitions don't
+      // Use a type assertion to bypass the type check
+      (this.wb as any).addEventListener('error', (event: Event) => {
+        // Cast to our custom error event type which has the error property
+        const errorEvent = event as WorkboxErrorEvent;
+        const errorMsg = errorEvent.error ? errorEvent.error.message : String(event);
         logger.error('Service worker error: ' + errorMsg);
       });
     } catch (error) {
@@ -94,10 +112,16 @@ export class PWAService {
 
   /**
    * Show update prompt to user
+   * Shows a notification about available service worker updates
+   *
+   * Uses standard confirm dialog for test compatibility
    */
   private showUpdatePrompt(): void {
-    if (confirm('New app update is available! Click OK to refresh.')) {
-      // If user accepts, refresh the page to activate the new service worker
+    // Display confirmation message using standard confirm dialog
+    // This ensures compatibility with our test suite
+    const userConfirmed = confirm('New app update is available! Click OK to refresh.');
+
+    if (userConfirmed) {
       window.location.reload();
     }
   }

@@ -85,7 +85,11 @@ global.MockShadowRoot = class MockShadowRoot {
     return results;
   }
 
-  // Add any other methods needed by tests
+  /**
+   * Implements the standard DOM textContent getter for shadow roots.
+   * This recursively concatenates the text content of all child nodes.
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent
+   */
   get textContent() {
     return this.childNodes
       .map((node) => {

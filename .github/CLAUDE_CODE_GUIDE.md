@@ -1,118 +1,105 @@
-# Using Claude Code with This Template
+# Claude Code Guide
 
-This TypeScript PWA template includes built-in support for Claude Code, Anthropic's AI coding assistant. This guide explains how to set up and use Claude Code effectively in this project.
+This guide explains how to use Claude Code in this repository for AI-assisted development.
 
-## Setup
+## What is Claude Code?
 
-You have two ways to authenticate with Claude Code:
+Claude Code is Anthropic's AI assistant specialized for software development tasks. It can help you with:
 
-### Option 1: Interactive Login Wizard (Recommended for First-Time Setup)
+- Understanding the codebase
+- Writing and improving code
+- Debugging issues
+- Creating tests
+- Implementing features
+- Answering programming questions
 
-When you first run `claude`, an interactive login wizard will guide you through the authentication process:
+## Setup and Authentication
 
-1. Run the Claude Code CLI:
-   ```bash
-   claude
-   ```
+This project is pre-configured to work with Claude Code in both DevContainers and GitHub Codespaces.
 
-2. Follow the on-screen instructions to authenticate:
-   - You'll be prompted to open a browser and log in to your Anthropic account
-   - After authentication, Claude Code will store your credentials locally
-   - This login is persistent across sessions
+### Authentication Options
 
-### Option 2: API Key Environment Variable
+You have two ways to authenticate:
 
-If you prefer direct API key configuration (useful for CI/CD or automation):
+1. **Interactive Login (Recommended)**:
+   - Run `claude` in your terminal
+   - Follow the on-screen instructions to log in with your Anthropic account
 
-1. Create an API key at the [Anthropic Console](https://console.anthropic.com/settings/keys)
-2. Set up the API key in your environment:
-
-   **Local Development:**
-   ```bash
-   export ANTHROPIC_API_KEY=your_api_key_here
-   ```
-
-   **GitHub Codespaces:**
-   Add the API key as a secret:
-   1. Go to your GitHub repository
-   2. Navigate to Settings > Secrets and variables > Codespaces
-   3. Add a new secret named `ANTHROPIC_API_KEY` with your API key
-
-### VS Code Extension
-
-The DevContainer and Codespaces configurations automatically install the Claude Code VS Code extension. If you're developing outside a container, install it manually:
-
-1. Open VS Code Extensions panel (Ctrl+Shift+X / Cmd+Shift+X)
-2. Search for "Claude Code"
-3. Install "Claude Code" by Anthropic
+2. **API Key**:
+   - Generate an API key at [Anthropic Console](https://console.anthropic.com/settings/keys)
+   - Set it as an environment variable:
+     ```bash
+     export ANTHROPIC_API_KEY=your_key_here
+     ```
+   - For persistent setup, add this to your `.bashrc` or `.profile`
+   - For GitHub Codespaces, add it as a Codespaces secret
 
 ## Using Claude Code
 
-### In VS Code
+### VS Code Extension
 
-1. **Chat with Claude Code:**
-   - Open the Command Palette (Ctrl+Shift+P / Cmd+Shift+P)
-   - Type "Claude Code: Start Chat" and select it
-   - A chat panel will open where you can ask questions and get assistance
+The Claude Code VS Code extension is pre-installed in the DevContainer and Codespaces environments.
 
-2. **Highlight Code and Ask:**
-   - Select some code in your editor
-   - Right-click and choose "Ask Claude Code about selection"
-   - Ask a question about the selected code
+- Use the Claude Code panel in VS Code
+- Highlight code and right-click to access Claude Code context menu options
+- Use keyboard shortcuts for quick access
 
-3. **Contextual Understanding:**
-   - Claude Code has access to your open files and project structure
-   - It can provide more accurate answers by understanding the context
+### CLI Commands
 
-### From the Terminal (CLI)
+The following commands are available in your terminal:
 
-The Claude Code CLI is pre-installed in the DevContainer. Use it as follows:
+- `claude` - Start the Claude Code CLI
+- `claude-chat` - Begin an interactive chat session
+- `claude-init` - Initialize Claude with project context
+- `claude-on <file/dir>` - Run Claude on a specific file or directory
 
-```bash
-# General help with file or directory context
-claude path/to/file/or/directory "Your question here"
+### Best Practices
 
-# Start an interactive chat session
-claude chat
+For the best results with Claude Code:
 
-# Get JSON formatted responses
-claude path/to/file --format=json "Generate a plan for refactoring this code"
-```
+1. **Be specific** in your requests
+2. **Provide context** when asking questions about the codebase
+3. **Specify file paths** when referring to code
+4. **Review suggestions** before implementing them
+5. **Ask for explanations** if you don't understand something
 
 ## Example Use Cases
 
-1. **Understanding Code:**
-   - "Explain what this component does"
-   - "How does the PWA registration work in this project?"
+### Understanding the Codebase
 
-2. **Debugging:**
-   - "Why is this test failing?"
-   - "Help me debug this function"
+```bash
+claude "Explain how the PWA service worker system works in this project"
+```
 
-3. **Adding Features:**
-   - "Help me add dark mode to this application"
-   - "How can I implement a caching system for API responses?"
+### Implementing Features
 
-4. **Optimizing Code:**
-   - "Suggest ways to optimize this function"
-   - "Review this code for performance issues"
+```bash
+claude "Help me implement a new counter component that includes a reset button"
+```
 
-5. **Learning the Codebase:**
-   - "Give me an overview of this project architecture"
-   - "Explain how the routing works in this application"
+### Creating Tests
 
-## Tips for Best Results
+```bash
+claude "Write unit tests for the utils/config.ts file"
+```
 
-1. **Be Specific:** Clearly describe what you're trying to accomplish
-2. **Provide Context:** Tell Claude Code about relevant design decisions or constraints
-3. **Iterate:** If the initial response isn't helpful, refine your question
-4. **Use IDE Integration:** Let Claude Code see your code directly through the extension
-5. **Check Results:** Always verify suggestions and explanations for accuracy
+### Debugging
 
-## Troubleshooting
+```bash
+claude "Debug why my service worker isn't registering in development mode"
+```
 
-- **Authentication Issues:** Ensure your `ANTHROPIC_API_KEY` is correctly set
-- **Extension Not Working:** Check if the extension is properly installed and activated
-- **CLI Issues:** Make sure the CLI is installed (`which claude` should return a path)
+## Environment Variables
 
-For more help, visit the [Claude Code documentation](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview)
+Claude Code can access environment variables that are set for the current session. The following environment variables are particularly relevant:
+
+- `ANTHROPIC_API_KEY` - Your Anthropic API key for authentication
+- `GITHUB_TOKEN` - GitHub token for repository operations
+
+See `.env.example` for a complete list of supported environment variables.
+
+## Additional Resources
+
+- [Claude Code Documentation](https://docs.anthropic.com/claude/code)
+- [Anthropic API Documentation](https://docs.anthropic.com/claude/reference/getting-started-with-the-api)
+- [VS Code Extension Documentation](https://docs.anthropic.com/claude/code/vs-code-extension)

@@ -1,92 +1,113 @@
-# Claude Automation for Issue Implementation
+# Claude Automation Guide
 
-This repository includes an automated workflow that uses Claude AI to implement solutions for GitHub issues. When a repository maintainer adds the "claude" label to an issue, Claude will automatically attempt to implement a solution and create a pull request.
+This document explains how the Claude AI automation works in this repository for implementing GitHub issues automatically.
+
+## Overview
+
+The repository includes a GitHub Actions workflow that uses Claude AI to automatically implement solutions for issues labeled with "claude". This enables rapid development and implementation of well-defined feature requests, bug fixes, and improvements.
 
 ## How It Works
 
-1. A GitHub issue is created with detailed requirements
-2. A repository maintainer adds the "claude" label to the issue
-3. The GitHub Actions workflow is triggered:
-   - Checks if the issue has enough information
-   - Uses Claude AI to analyze the issue and implement changes
-   - Verifies the changes with linting and tests
-   - Creates a pull request with the changes
+1. **Issue Creation**: A detailed issue is created following our issue templates
+2. **Label Application**: A repository maintainer reviews the issue and adds the "claude" label if suitable
+3. **Automated Implementation**: Once labeled, Claude AI:
+   - Analyzes the issue description and requirements
+   - Understands the codebase context
+   - Implements a solution (code changes, documentation, etc.)
+   - Creates a pull request with the implementation
    - Links the PR back to the original issue
 
-## Requirements for Claude-ready Issues
+## Issue Requirements for Claude Automation
 
-For Claude to successfully implement an issue:
+For an issue to be successfully implemented by Claude, it should include:
 
-- The issue must contain detailed requirements and clear acceptance criteria
-- The implementation should be relatively focused and well-defined
-- Where relevant, examples or specific files to modify should be included
-- The issue description should be at least 100 characters long (basic validation)
+1. **Clear Description**: Explain the problem or request clearly
+2. **Specific Requirements**: List concrete, testable requirements
+3. **Acceptance Criteria**: Provide criteria to determine when the issue is resolved
+4. **Context**: Explain how the issue fits into the larger codebase
+5. **Edge Cases**: Mention any edge cases that should be handled
 
 ## Example Issue Template
 
-We provide issue templates with a "Claude-ready?" section that can help contributors create issues that Claude can implement. These templates include:
+```markdown
+## Description
+[Clear, concise explanation of the feature/bug/improvement]
 
-- Feature request template
-- Bug report template
+## Requirements
+- [Requirement 1]
+- [Requirement 2]
+- [Requirement 3]
 
-## Security and Permissions
+## Acceptance Criteria
+- [ ] [Criteria 1]
+- [ ] [Criteria 2]
+- [ ] [All tests pass]
 
-- Only repository maintainers can add the "claude" label to issues
-- Claude AI's access is controlled through a GitHub secret (`ANTHROPIC_API_KEY`)
-- The workflow runs with limited GitHub token permissions to minimize security risks
-- Claude is instructed not to modify pre-commit or pre-push hooks
+## Additional Context
+[Any relevant background information, screenshots, code references]
 
-## Setup Requirements
+## Edge Cases to Consider
+- [Edge case 1]
+- [Edge case 2]
+```
 
-For this automation to work, the repository needs:
+## Usage for Contributors
 
-1. The `ANTHROPIC_API_KEY` secret configured in repository settings
-2. Branch protection rules on the main branch, requiring PR reviews
-3. GitHub Actions enabled for the repository
+If you're creating an issue that you think could be implemented by Claude:
 
-## Implementation Methods
+1. Use the appropriate issue template
+2. Provide clear, detailed information
+3. Be specific about requirements and edge cases
+4. **Do not** add the "claude" label yourself
+5. Wait for a maintainer to review and potentially add the "claude" label
 
-There are two implementation options available:
+## For Maintainers
 
-### 1. Standard Implementation (Default)
+Only repository maintainers can add the "claude" label to trigger the automation:
 
-This method runs Claude directly in the GitHub Actions runner environment. It's triggered when an issue is labeled with "claude".
+1. Review incoming issues for clarity and completeness
+2. Evaluate if the issue is suitable for Claude implementation
+3. If appropriate, add the "claude" label
+4. Monitor the resulting pull request for review
 
-### 2. Docker Implementation (Optional)
+### Requirements for Enabling Automation
 
-This method runs Claude inside a Docker container for more isolation. It's only triggered when an issue has both the "claude" AND "use-docker" labels.
+The repository must have the following GitHub secrets configured:
 
-To use the Docker implementation:
-1. Add the "claude" label to the issue
-2. Add the "use-docker" label to the issue
+- `ANTHROPIC_API_KEY`: An API key for the Anthropic Claude API
+- `GITHUB_TOKEN`: Already provided by GitHub Actions
 
-## Workflow Details
+### Workflow Configuration
 
-Both implementation methods follow these steps:
+The Claude automation workflow is defined in `.github/workflows/claude-automation.yml`. Maintainers can customize:
 
-1. **Issue Validation**: Checks if the issue has enough detail
-2. **Implementation**: Claude analyzes the issue and implements changes
-3. **Verification**: Changes are validated with typecheck, linting, and tests
-4. **Pull Request**: A PR is created with Claude's changes
-5. **Notification**: The issue is updated with a link to the PR
-
-All Claude output is captured in the GitHub Actions logs for troubleshooting.
+- Which labels trigger the automation
+- The Claude model to use
+- Branch naming conventions
+- PR metadata and templates
+- Notification settings
 
 ## Limitations
 
-There are some limitations to what Claude can implement:
+Claude Automation works best for:
 
-- Very complex architectural changes might be challenging
-- Issues requiring external integrations or services might need human assistance
-- Claude works best with well-defined, focused tasks
-- Sensitive security changes should always be human-reviewed
+- Well-defined, scoped features
+- Bug fixes with clear reproduction steps
+- Documentation improvements
+- Test additions
 
-## For Repository Maintainers
+It may not be suitable for:
 
-If you're a maintainer, you can trigger Claude by:
+- Complex architectural changes
+- Performance optimizations requiring deep system knowledge
+- Security-critical implementations
+- Major refactoring efforts
 
-1. Reviewing an issue to ensure it's well-defined
-2. Adding the "claude" label to the issue
-3. Monitoring the resulting pull request and providing feedback
+## Troubleshooting
 
-Remember that you should review PRs as thoroughly as you would human-authored ones.
+If the Claude automation fails to implement an issue:
+
+1. Check the GitHub Actions logs for detailed error information
+2. Consider if the issue description is clear and specific enough
+3. Break down complex issues into smaller, more focused issues
+4. Ensure all necessary context is provided in the issue description

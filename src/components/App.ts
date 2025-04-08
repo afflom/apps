@@ -1,12 +1,13 @@
 // Import the Counter web component
 import './Counter';
 import * as logger from '../utils/logger';
+import { appConfig } from '../utils/config';
 
 /**
  * App Web Component - Main application container
  */
 export class AppElement extends HTMLElement {
-  private _title: string = 'TypeScript PWA Template'; // Use _ to avoid conflicts with HTMLElement properties
+  private _title: string = appConfig.defaultTitle; // Use _ to avoid conflicts with HTMLElement properties
   private initialized = false;
 
   // Observed attributes
@@ -21,8 +22,8 @@ export class AppElement extends HTMLElement {
       // Create shadow DOM for encapsulation
       const shadow = this.attachShadow({ mode: 'open' });
 
-      // Get the title from attribute or use default
-      this._title = this.getAttribute('title') || 'TypeScript PWA Template';
+      // Get the title from attribute or use default from config
+      this._title = this.getAttribute('title') || appConfig.defaultTitle;
 
       // Create styles
       const style = document.createElement('style');
@@ -231,7 +232,7 @@ export class AppElement extends HTMLElement {
   attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     try {
       if (name === 'title' && oldValue !== newValue) {
-        this._title = newValue || 'TypeScript PWA Template';
+        this._title = newValue || appConfig.defaultTitle;
 
         // Update title if already rendered
         if (this.shadowRoot) {
