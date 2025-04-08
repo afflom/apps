@@ -7,7 +7,7 @@
 
 import { vi } from 'vitest';
 import { MockedCounterElement, MockedAppElement } from './types';
-import { config } from '../utils/config';
+import { appConfig } from '../utils/config';
 
 /**
  * Helper function to create a properly mocked CounterElement
@@ -129,7 +129,7 @@ export function createMockAppElement(): MockedAppElement {
   const app = document.createElement('app-root');
 
   // Add internal state with app title from config
-  let title = app.getAttribute('title') || config.appTitle;
+  let title = app.getAttribute('title') || appConfig.defaultTitle;
 
   // Add custom tag name property to help tests that check against tagName
   Object.defineProperty(app, '_customTagName', {

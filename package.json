@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview --port 0",
-    "test": "vitest run src/simple.test.ts src/utils/dom.test.ts",
+    "test": "vitest run",
     "test:components": "vitest run src/components/",
     "test:all": "vitest run",
     "test:watch": "vitest",
