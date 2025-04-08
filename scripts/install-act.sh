@@ -49,6 +49,19 @@ else
   echo "   You may need to restart your shell or run 'source ~/.bashrc' to use Act"
 fi
 
+# Create default Act configuration to avoid interactive prompts
+ACT_CONFIG_DIR="$HOME/.config/act"
+ACT_CONFIG_FILE="$ACT_CONFIG_DIR/actrc"
+if [ ! -f "$ACT_CONFIG_FILE" ]; then
+  mkdir -p "$ACT_CONFIG_DIR"
+  cat > "$ACT_CONFIG_FILE" << EOF
+-P ubuntu-latest=node:18-slim
+-P ubuntu-22.04=node:18-slim
+--container-architecture linux/amd64
+EOF
+  echo "Created Act config file at $ACT_CONFIG_FILE"
+fi
+
 # Clean up
 cd - > /dev/null
 rm -rf "$TMP_DIR"

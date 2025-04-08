@@ -9,13 +9,13 @@ This project uses Git hooks to ensure code quality:
 - **Pre-commit hook**: Runs linting, type checking, and unit tests to catch issues early
 - **Pre-push hook**: Runs integration tests, validates GitHub Actions workflows using Act, and verifies the application works in a real browser
 
-### GitHub Actions Workflow Validation (Act)
+### GitHub Actions Integration
 
-The pre-push hook integrates Act to validate GitHub Actions workflows locally before pushing:
+The pre-push hook ensures that all code quality checks and tests pass locally before pushing changes to GitHub. This process helps maintain high quality code:
 
-1. **Automatic Workflow Testing**: Validates that GitHub Actions configurations will succeed
-2. **Deployment Verification**: Ensures your code will deploy correctly in CI
-3. **Prevents CI Failures**: Catches configuration errors before they reach GitHub
+1. **Local Validation**: Ensures code quality checks and tests pass before pushing
+2. **Remote Verification**: GitHub Actions will then run on the remote server for further validation
+3. **Continuous Integration**: Prevents broken builds and failed deployments
 
 ## Test Structure
 
@@ -38,23 +38,11 @@ npm run test:integration:watch
 # Build the app, start a preview server, and run integration tests
 npm run test:e2e
 
-# Test GitHub Actions workflows locally with Act
-npm run test:actions
-
-# List available GitHub Actions workflows
-npm run test:actions:list
-
-# Run complete CI validation suite (tests + GitHub Actions)
+# Run complete CI validation suite (tests)
 npm run test:ci
-```
 
-### Setting Up Act
-
-To set up Act for local GitHub Actions testing:
-
-```bash
-# Install Act (only needed once)
-npm run setup:act
+# Test GitHub Actions workflows remotely (requires GITHUB_TOKEN)
+npm run test:workflows
 ```
 
 ## Test Features

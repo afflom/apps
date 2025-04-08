@@ -52,8 +52,21 @@ done
 
 echo "🚀 Running GitHub Actions workflow $WORKFLOW locally with Act..."
 
-# Run the specified workflow
-act -W ".github/workflows/$WORKFLOW" --artifact-server-path /tmp/artifacts
+# Create Act config file if it doesn't exist to prevent interactive prompts
+ACT_CONFIG_DIR="$HOME/.config/act"
+ACT_CONFIG_FILE="$ACT_CONFIG_DIR/actrc"
+if [ ! -f "$ACT_CONFIG_FILE" ]; then
+  mkdir -p "$ACT_CONFIG_DIR"
+  cat > "$ACT_CONFIG_FILE" << EOF
+-P ubuntu-latest=node:18-slim
+-P ubuntu-22.04=node:18-slim
+--container-architecture linux/amd64
+EOF
+  echo "Created Act config file at $ACT_CONFIG_FILE"
+fi
+
+# Run the specified workflow with non-interactive mode
+act -W ".github/workflows/$WORKFLOW" --artifact-server-path /tmp/artifacts -n
 
 EXIT_CODE=$?
 

@@ -109,18 +109,27 @@ Automatically deployed when changes are pushed to the `main` branch.
 
 All component tests run in a browser environment to ensure accurate DOM testing. The tests are located in `src/*.test.ts` files and use Vitest with browser support.
 
-### GitHub Actions Testing
+### GitHub Actions Workflows
 
-This repository integrates [Act](https://github.com/nektos/act) to validate GitHub Actions workflows locally before pushing:
+GitHub Actions workflows are automatically run on the remote server after pushing:
+
+1. When code is pushed to any branch, the CI/CD pipeline runs tests and builds the application
+2. For pushes to the main branch, the workflow also deploys to production
+3. Pull requests trigger deployments to the staging environment
+
+The pre-push hook ensures that the code passes local tests before pushing to GitHub, where GitHub Actions workflows will run.
+
+You can also manually trigger and validate workflows using:
 
 ```bash
-# Test GitHub Actions workflows locally
-npm run test:actions
+# Set your GitHub token first
+export GITHUB_TOKEN=your_github_token_here
+
+# Run and validate workflows remotely
+npm run test:workflows
 ```
 
-This prevents CI/CD failures by ensuring your workflows will run successfully before code is pushed to GitHub. The pre-push hook automatically runs these tests as part of the validation process.
-
-For more details, see [GitHub Actions Testing Documentation](./.github/GITHUB_ACTIONS_TESTING.md).
+This script triggers each workflow using the GitHub API and waits for its completion, reporting success or failure. It's useful for testing workflow changes without committing code.
 
 ## PWA Features
 

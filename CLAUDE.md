@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Test with coverage: `npm run test:coverage`
 - Integration tests: `npm run test:integration`
 - E2E tests with build: `npm run test:e2e`
-- Test GitHub Actions with Act: `npm run test:actions`
+- Test GitHub Actions remotely: `npm run test:workflows` (requires GITHUB_TOKEN)
 - Complete CI validation: `npm run test:ci`
 - Validate all: `npm run validate:all`
 - Deploy to dev: `npm run deploy:dev` (requires GITHUB_TOKEN)

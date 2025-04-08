@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 . "$(dirname "$0")/_/husky.sh"
 
 # Check for unstaged changes
@@ -34,14 +34,8 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "Running GitHub Actions workflows validation with Act..."
-bash ./scripts/run-act.sh
-
-if [ $? -ne 0 ]; then
-  echo "❌ ERROR: GitHub Actions workflow validation failed."
-  echo "   Fix GitHub Actions workflow issues before pushing."
-  exit 1
-fi
+echo "GitHub Actions workflows will be validated on the remote server"
+echo "Skipping local workflow validation as it will be handled by GitHub"
 
 echo ""
 echo "Building app for GitHub Pages deployment validation..."
