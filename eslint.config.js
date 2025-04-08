@@ -7,16 +7,44 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    // Global ESLint settings
+    ignores: ['**/dist/**', '**/node_modules/**', '**/*.min.js', '**/coverage/**', '**/build/**'],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: 'module',
+      globals: {
+        // Browser globals
+        window: 'readonly',
+        document: 'readonly',
+        navigator: 'readonly',
+        fetch: 'readonly',
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        Promise: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        HTMLElement: 'readonly',
+        Element: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        customElements: 'readonly',
+        history: 'readonly',
+        location: 'readonly',
+      },
+    },
+  },
+  // TypeScript files
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
         project: ['./tsconfig.json'],
       },
     },
-    files: ['**/*.ts', '**/*.tsx'],
-    ignores: ['dist', 'node_modules', '*.min.js', 'coverage'],
     rules: {
       '@typescript-eslint/explicit-function-return-type': [
         'error',
@@ -46,8 +74,9 @@ export default tseslint.config(
       semi: ['error', 'always'],
     },
   },
+  // Test files
   {
-    files: ['**/*.test.ts'],
+    files: ['**/*.test.ts', '**/*.spec.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
@@ -60,6 +89,7 @@ export default tseslint.config(
       'no-console': 'off',
     },
   },
+  // Service files - often need more flexibility with types
   {
     files: ['src/services/*.ts'],
     rules: {
@@ -69,6 +99,7 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  // Vite config
   {
     files: ['vite.config.ts'],
     languageOptions: {
@@ -77,8 +108,9 @@ export default tseslint.config(
       },
     },
   },
+  // JS scripts
   {
-    files: ['scripts/deploy-dev.js'],
+    files: ['scripts/*.js'],
     languageOptions: {
       globals: {
         process: 'readonly',
@@ -90,6 +122,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'off',
     },
   },
+  // Test setup
   {
     files: ['src/test-setup.js'],
     languageOptions: {
@@ -104,6 +137,7 @@ export default tseslint.config(
       },
     },
   },
+  // Prettier integration
   prettierConfig,
   {
     plugins: {
