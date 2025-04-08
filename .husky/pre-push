@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
 # Check for unstaged changes
@@ -47,5 +47,4 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "✅ All checks passed! GitHub Actions workflows validated locally."
-echo "✅ Push can proceed."
+echo "✅ All checks passed! Push can proceed."
