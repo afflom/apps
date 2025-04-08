@@ -100,10 +100,10 @@ EOF
 )
 
   # Call Claude in non-interactive mode
-  # Use temporary file to avoid argument list too long error
+  # Write to a file then cat it to Claude to avoid argument list too long error
   temp_prompt_file=$(mktemp)
   echo "$prompt" > "$temp_prompt_file"
-  result=$(claude -f "$temp_prompt_file")
+  result=$(cat "$temp_prompt_file" | claude --print)
   rm -f "$temp_prompt_file"
 
   # Extract the status from the JSON response
