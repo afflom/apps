@@ -235,53 +235,12 @@ export class AppElement extends HTMLElement {
       'This counter demonstrates the interactive functionality you can build with this template:';
     demoSection.appendChild(demoDescription);
 
-    // Create a button to demonstrate functionality (instead of using app-counter)
-    const counterBtn = document.createElement('button');
-    counterBtn.textContent = 'Counter: 0';
-    counterBtn.className = 'demo-button';
-    let count = 0;
+    // Create a counter component
+    const counter = document.createElement('app-counter');
+    counter.setAttribute('label', 'Counter');
+    counter.setAttribute('count', '0');
 
-    // Add click functionality
-    counterBtn.addEventListener('click', () => {
-      count++;
-      counterBtn.textContent = `Counter: ${count}`;
-    });
-
-    // Add button styles to the global style element
-    const styleEl = document.createElement('style');
-    styleEl.textContent = `
-      .demo-button {
-        padding: 0.8em 1.6em;
-        font-size: 1.1em;
-        font-weight: 500;
-        background-color: #646cff;
-        color: white;
-        border-radius: 8px;
-        border: 1px solid transparent;
-        cursor: pointer;
-        margin: 1.5rem 0;
-        transition: all 0.25s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      }
-      
-      .demo-button:hover {
-        background-color: #7c82ff;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-      }
-      
-      .demo-button:active {
-        transform: translateY(0);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      }
-    `;
-
-    // Add styles to the shadow root
-    if (this.shadowRoot) {
-      this.shadowRoot.appendChild(styleEl);
-    }
-
-    demoSection.appendChild(counterBtn);
+    demoSection.appendChild(counter);
     container.appendChild(demoSection);
 
     // Key Capabilities section
@@ -326,13 +285,10 @@ export class AppElement extends HTMLElement {
     // Add to shadow root (clear existing content first)
     const shadowRoot = this.shadowRoot;
     if (shadowRoot) {
-      // Remove the last child if it exists to avoid duplicating content
-      if (
-        shadowRoot.childElementCount &&
-        shadowRoot.childElementCount > 1 &&
-        shadowRoot.lastChild
-      ) {
-        shadowRoot.removeChild(shadowRoot.lastChild);
+      // Remove any existing content container to avoid duplication
+      // Keep only the first child which is the style element
+      while (shadowRoot.childNodes.length > 1) {
+        shadowRoot.removeChild(shadowRoot.lastChild as Node);
       }
 
       // Append the new container
