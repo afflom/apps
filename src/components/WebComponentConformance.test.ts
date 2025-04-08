@@ -485,6 +485,8 @@ describe('Web Component Conformance Tests', () => {
         expect(true).toBe(true);
       } catch (error) {
         // Test fails if the error propagates out
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        console.error('Error was not caught internally as expected:', error);
         expect('Error not caught').toBe('Error should have been caught internally');
       }
 

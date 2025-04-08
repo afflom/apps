@@ -185,6 +185,8 @@ describe('App Web Component', () => {
         app.connectedCallback();
       } catch (error) {
         // If this throws, the test will fail
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        console.error('Error caught in test (expected to be handled):', error);
         throw new Error('connectedCallback should not propagate errors');
       }
 
