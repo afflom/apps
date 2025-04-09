@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "wdio run wdio.conf.ts",
     "test:integration:watch": "wdio run wdio.conf.ts --watch",
-    "test:e2e": "npm run build && npm run preview & sleep 2 && npm run test:integration",
+    "test:e2e": "bash scripts/run-e2e-tests.sh",
     "lint:src": "eslint --config eslint.config.js 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint --config eslint.config.js 'src/**/*.{ts,tsx}' 'tests/**/*.ts' '*.ts' --fix",
     "lint": "eslint --config eslint.config.js 'src/**/*.{ts,tsx}' 'tests/**/*.ts' 'scripts/**/*.js' '*.{js,ts}'",

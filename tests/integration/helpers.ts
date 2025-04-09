@@ -23,6 +23,14 @@ export async function captureConsoleLogs(types: string[] = ['error', 'warn']) {
  */
 export async function waitForPageLoad(options = { timeout: 10000, waitForComponents: true }) {
   try {
+    // First check if we have a TEST_PORT environment variable and use it
+    const testPort = process.env.TEST_PORT;
+    if (testPort) {
+      console.log(`Using TEST_PORT environment variable: ${testPort}`);
+    } else {
+      console.log('No TEST_PORT environment variable found, will use default port');
+    }
+
     // First wait for document ready state
     await browser.waitUntil(
       async () => {
@@ -40,29 +48,86 @@ export async function waitForPageLoad(options = { timeout: 10000, waitForCompone
       await waitForWebComponentsReady();
     }
   } catch (error) {
-    // Try to connect to alternate ports if default port fails
-    const ports = [4173, 4174, 4175, 4176, 4177, 4178, 4179, 4180, 4181, 4182, 4183, 4184, 4185];
-    for (const port of ports) {
-      try {
-        await browser.url(`http://localhost:${port}/`);
-        await browser.waitUntil(
-          async () => {
-            const state = await browser.execute(() => document.readyState);
-            return state === 'complete';
-          },
-          { timeout: 2000 }
-        );
-        console.log(`Connected to port ${port}`);
+    // Try to recover by checking different ports
+    try {
+      console.log('Page load error, trying to determine the correct preview server port...');
 
-        // Then wait for web components if requested
-        if (options.waitForComponents) {
-          await waitForWebComponentsReady();
+      // Get the TEST_PORT environment variable or use the default range
+      const testPort = process.env.TEST_PORT;
+      let ports = [];
+
+      if (testPort) {
+        // If we have a TEST_PORT, try that port and a few ports around it first
+        // as they're most likely to be correct
+        const portNum = parseInt(testPort, 10);
+        ports = [portNum, portNum + 1, portNum - 1, portNum + 2, portNum - 2];
+
+        // Then add standard ports
+        ports = ports.concat([4173, 4174, 5173, 5174]);
+
+        // Then add more ports in a wider range around the TEST_PORT
+        for (let i = 3; i < 10; i++) {
+          ports.push(portNum + i);
+          ports.push(portNum - i);
         }
-        return;
-      } catch (e) {
-        // Continue to next port
+      } else {
+        // No TEST_PORT, use a wide range of common ports
+        ports = [
+          4173, 4174, 5173, 5174, 4175, 4176, 4177, 4178, 4179, 4180, 4181, 4182, 4183, 4184, 4185,
+          5175, 5176, 5177,
+        ];
       }
+
+      // Deduplicate the ports array
+      ports = [...new Set(ports)];
+
+      console.log(`Will try the following ports: ${ports.join(', ')}`);
+
+      for (const port of ports) {
+        try {
+          console.log(`Attempting to connect to port ${port}...`);
+          // Set a shorter timeout for these port checks to fail fast
+          await browser.setTimeout({ pageLoad: 3000 });
+          await browser.url(`http://localhost:${port}/`);
+
+          // Wait for page to load, but with a shorter timeout
+          await browser.waitUntil(
+            async () => {
+              const state = await browser.execute(() => document.readyState);
+              return state === 'complete';
+            },
+            { timeout: 3000 }
+          );
+
+          console.log(`✅ Successfully connected to port ${port}`);
+
+          // Reset timeout to normal
+          await browser.setTimeout({ pageLoad: options.timeout });
+
+          // Then wait for web components if requested
+          if (options.waitForComponents) {
+            await waitForWebComponentsReady();
+          }
+
+          // Save the successful port to baseUrl to make future navigations work
+          if (browser.options && browser.options.baseUrl) {
+            console.log(
+              `Updating baseUrl from ${browser.options.baseUrl} to http://localhost:${port}/`
+            );
+            browser.options.baseUrl = `http://localhost:${port}/`;
+          }
+
+          return;
+        } catch (e) {
+          console.log(`❌ Failed to connect to port ${port}: ${e.message}`);
+          // Continue to next port
+        }
+      }
+    } catch (portError) {
+      console.error('Error while trying to find server port:', portError);
     }
+
+    console.error('Failed to connect to any port. Original error:', error);
     throw error;
   }
 }
