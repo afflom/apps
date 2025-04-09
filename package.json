@@ -86,6 +86,14 @@
       "prettier --write"
     ]
   },
-  "author": "",
+  "author": "typescript-pwa-template contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/afflom/apps.git"
+  },
+  "homepage": "https://afflom.github.io/apps/",
+  "bugs": {
+    "url": "https://github.com/afflom/apps/issues"
+  },
   "license": "MIT"
 }
