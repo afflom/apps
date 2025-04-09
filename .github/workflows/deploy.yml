@@ -51,7 +51,28 @@ jobs:
         run: npm run typecheck
       
       - name: Run Tests
-        run: npm test
+        run: |
+          # Get Chrome version for ChromeDriver compatibility
+          CHROME_VERSION=$(google-chrome --version | grep -oP 'Chrome \K[0-9]+' || echo "")
+          if [ ! -z "$CHROME_VERSION" ]; then
+            echo "Detected Chrome version: $CHROME_VERSION"
+            export CHROME_VERSION=$CHROME_VERSION
+          else
+            # Leave unset to let ChromeDriver auto-detect
+            echo "Could not detect Chrome version, using ChromeDriver auto-detection"
+          fi
+          
+          # Set CI flag and ChromeDriver path for WebdriverIO
+          export CI=true
+          export CHROMEDRIVER_PATH=$(which chromedriver)
+          echo "Using ChromeDriver at: $CHROMEDRIVER_PATH"
+          
+          # Set WebdriverIO to use 0.0.0.0 as the host for CI environments
+          export WDIO_HOST=0.0.0.0
+          export VITE_HOST=0.0.0.0
+          
+          # Use test:e2e which will properly build the production app and start the preview server
+          npm run test:e2e
       
       - name: Lint and Format
         run: |
