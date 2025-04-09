@@ -22,6 +22,7 @@ permissions:
   pages: write
   id-token: write
   actions: write
+  pull-requests: write
 
 # Allow only one concurrent deployment per environment
 concurrency:
@@ -176,6 +177,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const previewUrl = '${{ needs.build.outputs.preview_url }}';
             github.rest.issues.createComment({
