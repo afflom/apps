@@ -72,8 +72,9 @@ jobs:
           export WDIO_HOST=0.0.0.0
           export VITE_HOST=0.0.0.0
           
-          # Run unit tests with coverage
-          npm run test:coverage
+          # Run unit tests with coverage, explicitly exclude node_modules
+          # We need to exclude node_modules tests from running since they contain tests that fail in CI
+          npx vitest run --exclude '**/node_modules/**' --coverage
           
           # Run integration tests
           # Use test:e2e which will properly build the production app and start the preview server
