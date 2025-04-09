@@ -30,29 +30,49 @@ PREVIEW_PID=$!
 
 # Give the server time to start up
 echo "Waiting for server to start..."
-sleep 3
+# Try up to 10 times with 1 second intervals
+for i in {1..10}; do
+  if curl -s http://localhost:$PORT > /dev/null; then
+    echo "Server is responding on port $PORT after $i attempts"
+    break
+  fi
+  echo "Waiting for server to start (attempt $i)..."
+  sleep 1
+done
 
-# Read the log file to verify the server started correctly
+# Try to connect to the server directly to verify it's running
 echo "Verifying server status..."
-SERVER_STARTED=$(cat preview-output.log | grep -m 1 "Local:" | grep -oE 'http://localhost:[0-9]+')
+MAX_ATTEMPTS=5
+ATTEMPT=1
+SERVER_STARTED=""
+
+while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+  # First check if the server reports its URL in the log file
+  SERVER_URL=$(cat preview-output.log 2>/dev/null | grep -m 1 "Local:" | grep -oE 'http://localhost:[0-9]+')
+  
+  if [ ! -z "$SERVER_URL" ]; then
+    echo "✅ Server reports it's running at $SERVER_URL"
+    SERVER_STARTED=$SERVER_URL
+    break
+  fi
+  
+  # Then try connecting directly to verify server is responding
+  if curl -s http://localhost:$PORT >/dev/null; then
+    echo "✅ Successfully connected to server on port $PORT"
+    SERVER_STARTED="http://localhost:$PORT"
+    break
+  fi
+  
+  echo "Verifying server status (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+  ATTEMPT=$((ATTEMPT+1))
+  sleep 1
+done
 
 if [ -z "$SERVER_STARTED" ]; then
-  echo "⚠️ Could not confirm server started on expected port, checking alternate detection method..."
-  
-  # Provide some extra time for the server to start
-  sleep 2
-  
-  # Check if anything is listening on our port
-  SOMETHING_ON_PORT=$(lsof -i ":$PORT" | grep LISTEN | wc -l)
-  if [ "$SOMETHING_ON_PORT" -gt 0 ]; then
-    echo "✅ Something is running on port $PORT, assuming it's our server"
-    SERVER_STARTED="http://localhost:$PORT"
-  else
-    echo "❌ Nothing is running on port $PORT"
-    # Print the preview-output.log for debugging
-    echo "Contents of preview-output.log:"
-    cat preview-output.log
-  fi
+  echo "❌ Failed to connect to server on port $PORT"
+  # Print the preview-output.log for debugging
+  echo "Contents of preview-output.log:"
+  cat preview-output.log 2>/dev/null || echo "No log file found"
 fi
 
 if [ -z "$SERVER_STARTED" ]; then
@@ -66,7 +86,21 @@ echo "✅ Preview server running at $SERVER_STARTED"
 
 # Export the port as an environment variable for WebDriver
 export TEST_PORT=$PORT
-export CHROME_VERSION=$(google-chrome --version | grep -oP 'Chrome \K[0-9]+')
+
+# Detect Chrome version for ChromeDriver compatibility
+if [ -z "$CHROME_VERSION" ]; then
+  # Only try to detect if not already set
+  DETECTED_VERSION=$(google-chrome --version | grep -oP 'Chrome \K[0-9]+' || echo "")
+  if [ ! -z "$DETECTED_VERSION" ]; then
+    export CHROME_VERSION=$DETECTED_VERSION
+    echo "Detected Chrome version: $CHROME_VERSION"
+  else
+    # If detection fails, leave it unset and let ChromeDriver auto-detect
+    echo "Could not detect Chrome version, using ChromeDriver auto-detection"
+  fi
+else
+  echo "Using pre-set Chrome version: $CHROME_VERSION"
+fi
 
 echo "Running tests with Chrome version: $CHROME_VERSION and server port: $TEST_PORT"
 

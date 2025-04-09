@@ -1,10 +1,28 @@
 import type { Options } from '@wdio/types';
 import path from 'path';
 import fs from 'fs';
+import { execSync } from 'child_process';
+
+// Detect Chrome version from system or use fallback
+function detectChromeVersion(): string {
+  try {
+    // Try to get Chrome version dynamically
+    const chromeOutput = execSync('google-chrome --version').toString().trim();
+    const versionMatch = chromeOutput.match(/Chrome\s+(\d+)/i);
+    if (versionMatch && versionMatch[1]) {
+      return versionMatch[1];
+    }
+  } catch (error) {
+    console.warn('Could not detect Chrome version:', error);
+  }
+
+  // Fallback to environment variable or use 'auto' for auto-detection
+  return process.env.CHROME_VERSION || 'auto';
+}
 
 // Get the Chrome version that matches the installed Chrome
-const chromeVersion = process.env.CHROME_VERSION || '135';
-console.log(`Using ChromeDriver for Chrome version: ${chromeVersion}`);
+const chromeVersion = detectChromeVersion();
+console.log(`Detected Chrome version: ${chromeVersion}`);
 
 // Get the test port from environment or use a default
 const testPort = process.env.TEST_PORT;
@@ -51,16 +69,35 @@ export const config: Options.Testrunner = {
   logLevel: 'info',
   bail: 0,
   baseUrl: `http://localhost:${testPort || 4173}`,
-  waitforTimeout: 10000,
-  connectionRetryTimeout: 60000, // Reduced from 120000 to fail faster
-  connectionRetryCount: 3,
+  // Use environment variables for timeouts or default values
+  waitforTimeout: process.env.WDIO_WAIT_TIMEOUT
+    ? parseInt(process.env.WDIO_WAIT_TIMEOUT, 10)
+    : 10000,
+  connectionRetryTimeout: process.env.WDIO_RETRY_TIMEOUT
+    ? parseInt(process.env.WDIO_RETRY_TIMEOUT, 10)
+    : 60000,
+  connectionRetryCount: process.env.WDIO_RETRY_COUNT
+    ? parseInt(process.env.WDIO_RETRY_COUNT, 10)
+    : 3,
   services: [
     [
       'chromedriver',
       {
         logFileName: 'wdio-chromedriver.log',
         outputDir: 'logs',
-        chromedriverCustomPath: path.resolve('./node_modules/chromedriver/bin/chromedriver'),
+        // If we have a custom path in environment, use it
+        ...(process.env.CHROMEDRIVER_PATH && {
+          chromedriverCustomPath: process.env.CHROMEDRIVER_PATH,
+        }),
+        // For CI environments, use the standard path
+        ...(!process.env.CHROMEDRIVER_PATH &&
+          process.env.CI && {
+            chromedriverCustomPath: '/usr/bin/chromedriver',
+          }),
+        // For local environments, let WebdriverIO find the right driver in node_modules
+        ...(!(process.env.CHROMEDRIVER_PATH || process.env.CI) && {
+          chromedriverCustomPath: path.resolve('./node_modules/chromedriver/bin/chromedriver'),
+        }),
       },
     ],
   ],

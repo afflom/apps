@@ -100,6 +100,51 @@ Automatically deployed when changes are pushed to the `main` branch.
 
 All tests run in a browser environment to ensure accurate DOM testing. The tests are located in `src/*.test.ts` files and use Vitest with browser support.
 
+### Browser Compatibility
+
+The integration tests use Chrome in headless mode. The test system will automatically detect the installed Chrome version and use a compatible ChromeDriver. This ensures tests can run on different environments (local development and CI/CD pipelines) regardless of Chrome version differences.
+
+#### ChromeDriver Version Management
+
+- **Local Development**: Typically uses Chrome v135, with ChromeDriver v135
+- **GitHub Actions CI**: Typically uses Chrome v134, with ChromeDriver v134
+- **Auto-detection**: Automatically detects installed Chrome version on each platform
+- **Fallback Mechanism**: Uses appropriate version based on environment if detection fails
+
+The system is configured to support multiple ChromeDriver versions simultaneously:
+
+```json
+"chromedriver": "^134.0.0 || ^135.0.0"
+```
+
+#### Troubleshooting ChromeDriver Issues
+
+If you encounter issues with ChromeDriver compatibility:
+
+```bash
+# Reinstall dependencies to get the correct ChromeDriver
+npm install
+
+# Check your Chrome version
+google-chrome --version
+
+# Run tests with explicit Chrome version
+CHROME_VERSION=134 npm run test:e2e
+
+# Specify a custom ChromeDriver path if needed
+CHROMEDRIVER_PATH=/path/to/chromedriver npm run test:e2e
+
+# For CI environments, force CI mode
+CI=true npm run test:e2e
+```
+
+#### How Version Detection Works
+
+1. The system attempts to detect your Chrome version automatically
+2. If successful, it selects the matching ChromeDriver
+3. If detection fails, it uses a default version based on environment (134 for CI, 135 for local)
+4. You can override this by setting the `CHROME_VERSION` environment variable
+
 ## PWA Features
 
 - Offline support
