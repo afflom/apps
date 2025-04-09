@@ -14,6 +14,19 @@ export default defineConfig({
     testTimeout: 10000,
     hookTimeout: 10000,
     exclude: ['**/tests/integration/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      all: true,
+      include: ['src/**/*.ts'],
+      exclude: ['**/*.test.ts', '**/*.d.ts'],
+      thresholds: {
+        statements: 80,
+        branches: 70,
+        functions: 80,
+        lines: 80,
+      },
+    },
   },
   resolve: {
     alias: {

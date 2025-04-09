@@ -45,10 +45,16 @@ export default defineConfig({
     },
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       all: true,
       include: ['src/**/*.ts'],
       exclude: ['**/*.test.ts', '**/*.d.ts'],
+      thresholds: {
+        statements: 80,
+        branches: 70,
+        functions: 80,
+        lines: 80,
+      },
     },
   },
   base: './',

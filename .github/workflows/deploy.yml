@@ -51,7 +51,7 @@ jobs:
       - name: Type Check
         run: npm run typecheck
       
-      - name: Run Tests
+      - name: Run Tests with Coverage
         run: |
           # Get Chrome version for ChromeDriver compatibility
           CHROME_VERSION=$(google-chrome --version | grep -oP 'Chrome \K[0-9]+' || echo "")
@@ -72,8 +72,20 @@ jobs:
           export WDIO_HOST=0.0.0.0
           export VITE_HOST=0.0.0.0
           
+          # Run unit tests with coverage
+          npm run test:coverage
+          
+          # Run integration tests
           # Use test:e2e which will properly build the production app and start the preview server
           npm run test:e2e
+      
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage/
+            junit-results/
       
       - name: Lint and Format
         run: |
