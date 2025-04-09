@@ -27,12 +27,17 @@ console.log(`Detected Chrome version: ${chromeVersion}`);
 // Get the test port from environment or use a default
 const testPort = process.env.TEST_PORT;
 
+// Get the host from environment or use a default (localhost for local, 0.0.0.0 for CI)
+const testHost = process.env.WDIO_HOST || (process.env.CI ? '0.0.0.0' : 'localhost');
+
 // Log port configuration
 if (testPort) {
   console.log(`Using TEST_PORT environment variable: ${testPort}`);
 } else {
   console.log('No TEST_PORT specified, will use port discovery in tests');
 }
+
+console.log(`Using host for WebDriver: ${testHost}`);
 
 // Create logs directory if it doesn't exist
 if (!fs.existsSync('logs')) {
@@ -68,7 +73,7 @@ export const config: Options.Testrunner = {
   ],
   logLevel: 'info',
   bail: 0,
-  baseUrl: `http://localhost:${testPort || 4173}`,
+  baseUrl: `http://${testHost}:${testPort || 4173}`,
   // Use environment variables for timeouts or default values
   waitforTimeout: process.env.WDIO_WAIT_TIMEOUT
     ? parseInt(process.env.WDIO_WAIT_TIMEOUT, 10)

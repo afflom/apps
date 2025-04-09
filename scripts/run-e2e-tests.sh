@@ -25,7 +25,8 @@ echo "Using port $PORT for the preview server"
 
 # Start the preview server on the selected port and capture its output
 echo "Starting the preview server on port $PORT..."
-npx vite preview --port $PORT > preview-output.log 2>&1 &
+# Use --host 0.0.0.0 to bind to all interfaces, required for CI environments
+npx vite preview --port $PORT --host 0.0.0.0 > preview-output.log 2>&1 &
 PREVIEW_PID=$!
 
 # Give the server time to start up

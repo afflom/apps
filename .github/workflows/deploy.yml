@@ -67,6 +67,10 @@ jobs:
           export CHROMEDRIVER_PATH=$(which chromedriver)
           echo "Using ChromeDriver at: $CHROMEDRIVER_PATH"
           
+          # Set WebdriverIO to use 0.0.0.0 as the host for CI environments
+          export WDIO_HOST=0.0.0.0
+          export VITE_HOST=0.0.0.0
+          
           npm test
       
       - name: Lint and Format
