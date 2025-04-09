@@ -71,7 +71,8 @@ jobs:
           export WDIO_HOST=0.0.0.0
           export VITE_HOST=0.0.0.0
           
-          npm test
+          # Use test:e2e which will properly build the production app and start the preview server
+          npm run test:e2e
       
       - name: Lint and Format
         run: |

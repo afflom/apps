@@ -33,10 +33,18 @@ PREVIEW_PID=$!
 echo "Waiting for server to start..."
 # Try up to 10 times with 1 second intervals
 for i in {1..10}; do
+  # Try localhost first
   if curl -s http://localhost:$PORT > /dev/null; then
-    echo "Server is responding on port $PORT after $i attempts"
+    echo "Server is responding on localhost:$PORT after $i attempts"
     break
   fi
+  
+  # In CI environments, also try 0.0.0.0
+  if [ ! -z "$CI" ] && curl -s http://0.0.0.0:$PORT > /dev/null; then
+    echo "Server is responding on 0.0.0.0:$PORT after $i attempts"
+    break
+  fi
+  
   echo "Waiting for server to start (attempt $i)..."
   sleep 1
 done
@@ -59,8 +67,15 @@ while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
   
   # Then try connecting directly to verify server is responding
   if curl -s http://localhost:$PORT >/dev/null; then
-    echo "✅ Successfully connected to server on port $PORT"
+    echo "✅ Successfully connected to server on localhost:$PORT"
     SERVER_STARTED="http://localhost:$PORT"
+    break
+  fi
+  
+  # In CI environments, also try 0.0.0.0
+  if [ ! -z "$CI" ] && curl -s http://0.0.0.0:$PORT >/dev/null; then
+    echo "✅ Successfully connected to server on 0.0.0.0:$PORT"
+    SERVER_STARTED="http://0.0.0.0:$PORT"
     break
   fi
   
@@ -74,6 +89,19 @@ if [ -z "$SERVER_STARTED" ]; then
   # Print the preview-output.log for debugging
   echo "Contents of preview-output.log:"
   cat preview-output.log 2>/dev/null || echo "No log file found"
+  
+  # Print network diagnostics in CI environments
+  if [ ! -z "$CI" ]; then
+    echo "Network diagnostics in CI environment:"
+    echo "Checking if port $PORT is listening:"
+    netstat -tulpn | grep $PORT || echo "Port $PORT is not listening"
+    echo "Checking localhost resolves:"
+    getent hosts localhost || echo "localhost not in hosts"
+    echo "Checking localhost ping:"
+    ping -c 1 localhost || echo "Cannot ping localhost"
+    echo "Checking 0.0.0.0 availability:"
+    curl -v http://0.0.0.0:$PORT 2>&1 || echo "Cannot connect to 0.0.0.0:$PORT"
+  fi
 fi
 
 if [ -z "$SERVER_STARTED" ]; then

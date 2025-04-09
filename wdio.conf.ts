@@ -28,7 +28,8 @@ console.log(`Detected Chrome version: ${chromeVersion}`);
 const testPort = process.env.TEST_PORT;
 
 // Get the host from environment or use a default (localhost for local, 0.0.0.0 for CI)
-const testHost = process.env.WDIO_HOST || (process.env.CI ? '0.0.0.0' : 'localhost');
+// In CI with GitHub Actions, needed to use localhost even though binding to 0.0.0.0
+const testHost = process.env.WDIO_HOST || (process.env.CI ? 'localhost' : 'localhost');
 
 // Log port configuration
 if (testPort) {
