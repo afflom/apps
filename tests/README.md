@@ -7,7 +7,15 @@ This directory contains browser-based integration tests for the application usin
 This project uses Git hooks to ensure code quality:
 
 - **Pre-commit hook**: Runs linting, type checking, and unit tests to catch issues early
-- **Pre-push hook**: Runs integration tests to verify the application works in a real browser
+- **Pre-push hook**: Runs integration tests, validates GitHub Actions workflows using Act, and verifies the application works in a real browser
+
+### GitHub Actions Integration
+
+The pre-push hook ensures that all code quality checks and tests pass locally before pushing changes to GitHub. This process helps maintain high quality code:
+
+1. **Local Validation**: Ensures code quality checks and tests pass before pushing
+2. **Remote Verification**: GitHub Actions will then run on the remote server for further validation
+3. **Continuous Integration**: Prevents broken builds and failed deployments
 
 ## Test Structure
 
@@ -29,6 +37,12 @@ npm run test:integration:watch
 
 # Build the app, start a preview server, and run integration tests
 npm run test:e2e
+
+# Run complete CI validation suite (tests)
+npm run test:ci
+
+# Test GitHub Actions workflows remotely (requires GITHUB_TOKEN)
+npm run test:workflows
 ```
 
 ## Test Features

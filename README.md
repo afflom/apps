@@ -14,6 +14,7 @@ A fully-featured TypeScript PWA template that deploys to GitHub Pages using GitH
 - 🐳 DevContainer and GitHub Codespaces ready
 - 🤖 Claude Code integration for AI-assisted development
 - 🔧 Automated issue implementation by Claude AI
+- 🧪 Local GitHub Actions testing with Act
 
 ## Getting Started
 
@@ -31,6 +32,12 @@ npm test
 
 # Run tests in watch mode
 npm run test:watch
+
+# Test GitHub Actions workflows locally
+npm run test:actions
+
+# Run complete CI validation (tests + GitHub Actions)
+npm run test:ci
 
 # Type checking
 npm run typecheck
@@ -96,9 +103,33 @@ Automatically deployed when a Pull Request is created or updated. A comment with
 
 Automatically deployed when changes are pushed to the `main` branch.
 
-## In-Browser Testing
+## Testing
 
-All tests run in a browser environment to ensure accurate DOM testing. The tests are located in `src/*.test.ts` files and use Vitest with browser support.
+### In-Browser Testing
+
+All component tests run in a browser environment to ensure accurate DOM testing. The tests are located in `src/*.test.ts` files and use Vitest with browser support.
+
+### GitHub Actions Workflows
+
+GitHub Actions workflows are automatically run on the remote server after pushing:
+
+1. When code is pushed to any branch, the CI/CD pipeline runs tests and builds the application
+2. For pushes to the main branch, the workflow also deploys to production
+3. Pull requests trigger deployments to the staging environment
+
+The pre-push hook ensures that the code passes local tests before pushing to GitHub, where GitHub Actions workflows will run.
+
+You can also manually trigger and validate workflows using:
+
+```bash
+# Set your GitHub token first
+export GITHUB_TOKEN=your_github_token_here
+
+# Run and validate workflows remotely
+npm run test:workflows
+```
+
+This script triggers each workflow using the GitHub API and waits for its completion, reporting success or failure. It's useful for testing workflow changes without committing code.
 
 ### Browser Compatibility
 

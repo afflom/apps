@@ -17,6 +17,8 @@
     "test:integration": "wdio run wdio.conf.ts",
     "test:integration:watch": "wdio run wdio.conf.ts --watch",
     "test:e2e": "bash scripts/run-e2e-tests.sh",
+    "test:ci": "npm run validate && npm run test",
+    "test:workflows": "node scripts/remote-workflow-test.js",
     "lint:src": "eslint --config eslint.config.js 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint --config eslint.config.js 'src/**/*.{ts,tsx}' 'tests/**/*.ts' '*.ts' --fix",
     "lint": "eslint --config eslint.config.js 'src/**/*.{ts,tsx}' 'tests/**/*.ts' 'scripts/**/*.js' '*.{js,ts}'",
@@ -30,6 +32,7 @@
     "prepare": "husky",
     "deploy:dev": "node scripts/deploy-dev.js",
     "setup:devcontainer": "bash scripts/setup-devcontainer.sh",
+    "setup:act": "bash scripts/install-act.sh",
     "claude-code": "bash scripts/ensure-claude-code.sh"
   },
   "dependencies": {
